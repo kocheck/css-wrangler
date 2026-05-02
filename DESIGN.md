@@ -18,8 +18,8 @@ description: >-
 #   type.{name}          →  --type-{name}
 #   tracking.{name}      →  --tracking-{name}
 #   leading.{name}       →  --leading-{name}
-#   sp.{name}            →  --sp-{name}
-#   radius.{name}        →  --radius-{name}
+#   spacing.{name}       →  --sp-{name}     (section name = `spacing` per @google/design.md schema)
+#   rounded.{name}       →  --radius-{name} (section name = `rounded` per @google/design.md schema)
 #   motion.{name}        →  --motion-{name}
 #   ease.{name}          →  --ease-{name}
 # Sections `typography:` and `components:` are NOT codegen'd — they're rich
@@ -81,7 +81,7 @@ leading:
   normal: 1.4
 
 # 4px baseline grid
-sp:
+spacing:
   "0": "0"
   "1": 2px
   "2": 4px
@@ -93,7 +93,7 @@ sp:
   "8": 24px
   "9": 32px
 
-radius:
+rounded:
   sm: 1px
   md: 2px
 
@@ -153,19 +153,19 @@ components:
     backgroundColor: "{colors.accent-signal}"
     textColor: "{colors.bg-page}"
     typography: "{typography.label}"
-    radius: "{radius.md}"
-    padding: "{sp.4}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.4}"
   card:
     backgroundColor: "{colors.bg-elev-1}"
     textColor: "{colors.fg-primary}"
-    radius: "{radius.md}"
-    padding: "{sp.5}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.5}"
   input:
     backgroundColor: "{colors.bg-elev-3}"
     textColor: "{colors.fg-primary}"
     typography: "{typography.data}"
-    radius: "{radius.sm}"
-    padding: "{sp.3}"
+    rounded: "{rounded.sm}"
+    padding: "{spacing.3}"
 ---
 
 # DESIGN.md — CSS Wrangler
@@ -234,8 +234,8 @@ Type scale is small (9–13px). This is a tool, not a marketing page.
 
 ## Layout
 
-4px baseline. Tokens `sp.1` through `sp.9` cover the full scale
-(2, 4, 6, 8, 12, 16, 20, 24, 32). Don't use raw px in components.
+4px baseline. Tokens `spacing.1` through `spacing.9` cover the full
+scale (2, 4, 6, 8, 12, 16, 20, 24, 32). Don't use raw px in components.
 
 ## Elevation & depth
 

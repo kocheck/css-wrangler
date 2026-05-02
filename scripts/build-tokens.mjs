@@ -10,8 +10,8 @@
  *   type.{name}          → --type-{name}
  *   tracking.{name}      → --tracking-{name}
  *   leading.{name}       → --leading-{name}
- *   sp.{name}            → --sp-{name}
- *   radius.{name}        → --radius-{name}
+ *   spacing.{name}       → --sp-{name}     (section name dictated by @google/design.md)
+ *   rounded.{name}       → --radius-{name} (section name dictated by @google/design.md)
  *   motion.{name}        → --motion-{name}
  *   ease.{name}          → --ease-{name}
  *
@@ -41,8 +41,8 @@ const GROUPS = [
   { key: "type", prefix: "type-" },
   { key: "tracking", prefix: "tracking-" },
   { key: "leading", prefix: "leading-" },
-  { key: "sp", prefix: "sp-" },
-  { key: "radius", prefix: "radius-" },
+  { key: "spacing", prefix: "sp-" },
+  { key: "rounded", prefix: "radius-" },
   { key: "motion", prefix: "motion-" },
   { key: "ease", prefix: "ease-" },
 ];

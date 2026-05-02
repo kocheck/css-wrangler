@@ -47,7 +47,7 @@
   --leading-tight: 1.2;
   --leading-normal: 1.4;
 
-  /* SP */
+  /* SPACING */
   --sp-0: 0;
   --sp-1: 2px;
   --sp-2: 4px;
@@ -59,7 +59,7 @@
   --sp-8: 24px;
   --sp-9: 32px;
 
-  /* RADIUS */
+  /* ROUNDED */
   --radius-sm: 1px;
   --radius-md: 2px;
 
