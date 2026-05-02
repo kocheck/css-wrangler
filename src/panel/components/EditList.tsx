@@ -14,13 +14,24 @@ function changesEqual(a: Edit, b: Edit): boolean {
   return b.changes.every((c) => aKeys.has(changeKey(c)));
 }
 
+// Excel-style: A..Z, AA..AZ, BA..BZ, ...
+function indexToLabel(index: number): string {
+  let n = index;
+  let label = "";
+  do {
+    label = String.fromCharCode(65 + (n % 26)) + label;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return label;
+}
+
 function deriveGroupLabels(edits: Edit[]): Map<string, string> {
   const labels = new Map<string, string>();
-  let nextCharCode = 65; // 'A'
+  let i = 0;
   for (const e of edits) {
     if (!e.siblingGroup) continue;
     if (labels.has(e.siblingGroup)) continue;
-    labels.set(e.siblingGroup, String.fromCharCode(nextCharCode++));
+    labels.set(e.siblingGroup, indexToLabel(i++));
   }
   return labels;
 }

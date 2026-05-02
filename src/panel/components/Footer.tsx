@@ -3,11 +3,17 @@ import { copyToClipboard } from "../lib/clipboard";
 import { buildPatch, buildPatchMarkdown } from "../lib/patch";
 import { useEditStore } from "../store/editStore";
 
+interface CopiedSnapshot {
+  json: string;
+  bytes: number;
+}
+
 export default function Footer() {
   const edits = useEditStore((s) => s.edits);
   const url = useEditStore((s) => s.url);
   const stylingSystem = useEditStore((s) => s.stylingSystem);
   const [state, setState] = useState<"idle" | "copied">("idle");
+  const [snapshot, setSnapshot] = useState<CopiedSnapshot | null>(null);
 
   const totalChanges = edits.reduce((acc, e) => acc + e.changes.length, 0);
   const groupCount = useMemo(() => {
@@ -16,19 +22,17 @@ export default function Footer() {
     return groups.size;
   }, [edits]);
 
-  const preview = useMemo(() => {
-    if (state !== "copied" || totalChanges === 0) return null;
-    const patch = buildPatch({ url, stylingSystem, edits });
-    const json = JSON.stringify(patch, null, 2);
-    const bytes = new TextEncoder().encode(json).length;
-    return { json, bytes };
-  }, [state, totalChanges, url, stylingSystem, edits]);
+  const preview = state === "copied" ? snapshot : null;
 
   async function onCopy() {
     if (totalChanges === 0) return;
+    const patch = buildPatch({ url, stylingSystem, edits });
+    const json = JSON.stringify(patch, null, 2);
     const md = buildPatchMarkdown({ url, stylingSystem, edits });
     const ok = await copyToClipboard(md);
     if (ok) {
+      const bytes = new TextEncoder().encode(json).length;
+      setSnapshot({ json, bytes });
       setState("copied");
       window.setTimeout(() => setState("idle"), 4000);
     }

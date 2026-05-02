@@ -129,58 +129,45 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     const k = changeKey(state, breakpoint, property);
     const from = edit.baseline[k] ?? "";
     const next: PropertyChange = { state, breakpoint, property, from, to: value };
+    const groupId = edit.siblingGroup;
+    const targetIds = new Set<string>([editId]);
+    if (groupId) {
+      for (const e of get().edits) {
+        if (e.siblingGroup === groupId) targetIds.add(e.id);
+      }
+    }
+
     set((s) => ({
       edits: s.edits.map((e) => {
-        if (e.id !== editId) return e;
+        if (!targetIds.has(e.id)) return e;
         const filtered = e.changes.filter(
           (c) => !(c.state === state && c.breakpoint === breakpoint && c.property === property),
         );
-        return { ...e, changes: [...filtered, next] };
+        // each sibling tracks its own `from` (its own baseline), but shares state/property/to
+        const localFrom = e.baseline[k] ?? "";
+        const change: PropertyChange = e.id === editId ? next : { ...next, from: localFrom };
+        return { ...e, changes: [...filtered, change] };
       }),
       history: [...s.history, { kind: "remove-change", editId, changeKey: k }],
     }));
-    try {
-      await sendToContent({
-        type: "apply-edit",
-        wranglerId: edit.element.wranglerId,
-        state,
-        breakpoint,
-        property,
-        value,
-      });
-    } catch (err) {
-      console.error("[wrangler] apply-edit failed", err);
-    }
 
-    // mirror to siblings if this edit belongs to a group
-    if (edit.siblingGroup) {
-      const siblings = get().edits.filter(
-        (e) => e.id !== editId && e.siblingGroup === edit.siblingGroup,
-      );
-      for (const sib of siblings) {
-        set((s) => ({
-          edits: s.edits.map((e) => {
-            if (e.id !== sib.id) return e;
-            const filtered = e.changes.filter(
-              (c) => !(c.state === state && c.breakpoint === breakpoint && c.property === property),
-            );
-            return { ...e, changes: [...filtered, next] };
-          }),
-        }));
-        try {
-          await sendToContent({
-            type: "apply-edit",
-            wranglerId: sib.element.wranglerId,
-            state,
-            breakpoint,
-            property,
-            value,
-          });
-        } catch {
-          /* ignore */
-        }
-      }
-    }
+    const wranglerIds = Array.from(targetIds)
+      .map((id) => get().edits.find((e) => e.id === id)?.element.wranglerId)
+      .filter((id): id is string => Boolean(id));
+    await Promise.all(
+      wranglerIds.map((wranglerId) =>
+        sendToContent({
+          type: "apply-edit",
+          wranglerId,
+          state,
+          breakpoint,
+          property,
+          value,
+        }).catch((err) => {
+          console.error("[wrangler] apply-edit failed", err);
+        }),
+      ),
+    );
   },
 
   removeEdit: async (editId) => {
@@ -224,32 +211,49 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     const last = get().history[get().history.length - 1];
     if (!last) return;
     set((s) => ({ history: s.history.slice(0, -1) }));
-    if (last.kind === "remove-change") {
-      const edit = get().edits.find((e) => e.id === last.editId);
-      if (!edit) return;
-      const remaining = edit.changes.filter(
-        (c) => changeKey(c.state, c.breakpoint, c.property) !== last.changeKey,
-      );
-      set((s) => ({
-        edits: s.edits.map((e) => (e.id === last.editId ? { ...e, changes: remaining } : e)),
-      }));
-      const [stateStr, bpStr, prop] = last.changeKey.split("|");
-      const baseline = edit.baseline[last.changeKey] ?? "";
-      if (baseline) {
-        try {
-          await sendToContent({
-            type: "apply-edit",
-            wranglerId: edit.element.wranglerId,
-            state: stateStr as CssState,
-            breakpoint: bpStr as BreakpointKey,
-            property: prop as TierProperty,
-            value: baseline,
-          });
-        } catch {
-          /* ignore */
-        }
+    if (last.kind !== "remove-change") return;
+
+    const edit = get().edits.find((e) => e.id === last.editId);
+    if (!edit) return;
+    // grouped edits are applied as one source change → undo reverts the whole group
+    const targetIds = new Set<string>([edit.id]);
+    if (edit.siblingGroup) {
+      for (const e of get().edits) {
+        if (e.siblingGroup === edit.siblingGroup) targetIds.add(e.id);
       }
     }
+
+    set((s) => ({
+      edits: s.edits.map((e) => {
+        if (!targetIds.has(e.id)) return e;
+        return {
+          ...e,
+          changes: e.changes.filter(
+            (c) => changeKey(c.state, c.breakpoint, c.property) !== last.changeKey,
+          ),
+        };
+      }),
+    }));
+
+    const [stateStr, bpStr, prop] = last.changeKey.split("|");
+    await Promise.all(
+      Array.from(targetIds).map((id) => {
+        const target = get().edits.find((e) => e.id === id);
+        if (!target) return Promise.resolve();
+        const baseline = target.baseline[last.changeKey] ?? "";
+        if (!baseline) return Promise.resolve();
+        return sendToContent({
+          type: "apply-edit",
+          wranglerId: target.element.wranglerId,
+          state: stateStr as CssState,
+          breakpoint: bpStr as BreakpointKey,
+          property: prop as TierProperty,
+          value: baseline,
+        }).catch(() => {
+          /* ignore */
+        });
+      }),
+    );
   },
 
   selectEdit: (id) => set({ selectedId: id }),
@@ -297,14 +301,21 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     }
 
     const groupId = `g-${nanoid(6)}`;
-    const newEdits: Edit[] = response.siblings.map((s) => ({
-      id: s.element.wranglerId,
-      siblingGroup: groupId,
-      element: s.element,
-      baseline: buildBaseline(s.computed),
-      changes: edit.changes.map((c) => ({ ...c })),
-      createdAt: Date.now(),
-    }));
+    const newEdits: Edit[] = response.siblings.map((s) => {
+      const baseline = buildBaseline(s.computed);
+      return {
+        id: s.element.wranglerId,
+        siblingGroup: groupId,
+        element: s.element,
+        baseline,
+        // each sibling's `from` reflects its own baseline; `to` mirrors the source
+        changes: edit.changes.map((c) => ({
+          ...c,
+          from: baseline[changeKey(c.state, c.breakpoint, c.property)] ?? "",
+        })),
+        createdAt: Date.now(),
+      };
+    });
 
     set((s) => ({
       edits: [
@@ -319,22 +330,22 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     }));
 
     // replay current changes onto each new sibling so the page mirrors the source edit
-    for (const sib of newEdits) {
-      for (const change of sib.changes) {
-        try {
-          await sendToContent({
+    await Promise.all(
+      newEdits.flatMap((sib) =>
+        sib.changes.map((change) =>
+          sendToContent({
             type: "apply-edit",
             wranglerId: sib.element.wranglerId,
             state: change.state,
             breakpoint: change.breakpoint,
             property: change.property,
             value: change.to,
-          });
-        } catch {
-          /* ignore */
-        }
-      }
-    }
+          }).catch(() => {
+            /* ignore */
+          }),
+        ),
+      ),
+    );
   },
 
   dismissSiblingPrompt: () => set({ pendingSibling: null }),
