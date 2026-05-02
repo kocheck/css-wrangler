@@ -1,0 +1,39 @@
+{
+  "name": "css-wrangler",
+  "version": "0.1.0",
+  "description": "Visually edit CSS on any site and export an LLM-ready patch for Claude Code.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "pnpm tokens && vite",
+    "build": "pnpm tokens && tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "biome check src",
+    "format": "biome format --write src",
+    "typecheck": "tsc -b --noEmit",
+    "tokens": "node scripts/build-tokens.mjs",
+    "tokens:check": "node scripts/build-tokens.mjs --check",
+    "design:lint": "design.md lint DESIGN.md",
+    "design:diff": "design.md diff"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@google/design.md": "^0.1.1",
+    "@types/chrome": "^0.0.287",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.6.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "js-yaml": "^4.1.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
+}
