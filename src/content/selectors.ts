@@ -152,3 +152,23 @@ export function captureElementMetadata(el: Element) {
     domPath: buildDomPath(el),
   };
 }
+
+/**
+ * Pick the highest-stability selector that matches multiple elements.
+ * Skips `path` (unique by definition) and `text` (querySelector can't run it).
+ */
+export function findSimilarSelector(selectors: SelectorCandidate[]): {
+  selector: string | null;
+  count: number;
+} {
+  for (const cand of selectors) {
+    if (cand.type === "path" || cand.type === "text") continue;
+    try {
+      const matches = document.querySelectorAll(cand.value);
+      if (matches.length > 1) return { selector: cand.value, count: matches.length };
+    } catch {
+      // invalid selector for some reason — skip
+    }
+  }
+  return { selector: null, count: 0 };
+}

@@ -45,7 +45,7 @@ export default function App() {
   useEffect(() => {
     return onContentMessage((msg) => {
       if (msg.type === "element-picked") {
-        receiveElement(msg.element, msg.computed);
+        receiveElement(msg.element, msg.computed, msg.similarSelector, msg.similarCount);
       } else if (msg.type === "pick-cancelled") {
         useEditStore.setState({ pickActive: false });
       } else if (msg.type === "content-ready" || msg.type === "pong") {

@@ -1,5 +1,14 @@
 import { TIER_1_PROPERTIES, WRANGLER_CLASS_PREFIX } from "@shared/constants";
-import type { ApplyEditMsg, ContentToPanel, PanelToContent, RemoveEditMsg } from "@shared/messages";
+import type {
+  ApplyEditMsg,
+  ContentToPanel,
+  ForceStateMsg,
+  PanelToContent,
+  RemoveEditMsg,
+  SiblingPayload,
+  TagSiblingsMsg,
+  TagSiblingsResponse,
+} from "@shared/messages";
 import { nanoid } from "@shared/nanoid";
 import {
   applyRule,
@@ -7,6 +16,7 @@ import {
   reattachStyleTag,
   rebuildStyleTag,
   removeAllRulesFor,
+  setForceStateClass,
   tagElement,
 } from "./injector";
 import {
@@ -17,7 +27,7 @@ import {
   stopObserver,
 } from "./observer";
 import { startPick, stopPick } from "./picker";
-import { captureElementMetadata } from "./selectors";
+import { captureElementMetadata, findSimilarSelector } from "./selectors";
 import { detectStylingSystem } from "./styling-detect";
 
 declare global {
@@ -68,10 +78,13 @@ function getComputedSubset(
   return out;
 }
 
-function handle(
-  msg: PanelToContent,
-  respond: (m: ContentToPanel | { ok: true } | { ok: false; error: string }) => void,
-): void {
+type ResponsePayload =
+  | ContentToPanel
+  | { ok: true }
+  | { ok: false; error: string }
+  | TagSiblingsResponse;
+
+function handle(msg: PanelToContent, respond: (m: ResponsePayload) => void): void {
   switch (msg.type) {
     case "ping":
       respond({
@@ -98,7 +111,14 @@ function handle(
           rememberElement(wranglerId, meta.domPath);
           const elementRef = { wranglerId, ...meta };
           const computed = getComputedSubset(el);
-          send({ type: "element-picked", element: elementRef, computed });
+          const similar = findSimilarSelector(meta.selectors);
+          send({
+            type: "element-picked",
+            element: elementRef,
+            computed,
+            similarSelector: similar.selector,
+            similarCount: similar.count,
+          });
         },
         () => send({ type: "pick-cancelled" }),
       );
@@ -113,6 +133,15 @@ function handle(
     case "apply-edit":
       handleApply(msg);
       respond({ ok: true });
+      return;
+
+    case "force-state":
+      handleForceState(msg);
+      respond({ ok: true });
+      return;
+
+    case "tag-siblings":
+      respond({ ok: true, siblings: handleTagSiblings(msg) });
       return;
 
     case "remove-edit":
@@ -147,4 +176,32 @@ function handleRemove(msg: RemoveEditMsg): void {
   const el = document.querySelector(`.${CSS.escape(msg.wranglerId)}`);
   if (el) el.classList.remove(msg.wranglerId);
   forgetElement(msg.wranglerId);
+}
+
+function handleForceState(msg: ForceStateMsg): void {
+  setForceStateClass(msg.wranglerId, msg.state);
+}
+
+function handleTagSiblings(msg: TagSiblingsMsg): SiblingPayload[] {
+  const out: SiblingPayload[] = [];
+  let matches: NodeListOf<Element>;
+  try {
+    matches = document.querySelectorAll(msg.selector);
+  } catch {
+    return out;
+  }
+  for (const el of Array.from(matches)) {
+    if (el.classList.contains(msg.excludeWranglerId)) continue;
+    const alreadyTagged = Array.from(el.classList).some((c) => c.startsWith(WRANGLER_CLASS_PREFIX));
+    if (alreadyTagged) continue;
+    const wranglerId = `${WRANGLER_CLASS_PREFIX}${nanoid(8)}`;
+    tagElement(el, wranglerId);
+    const meta = captureElementMetadata(el);
+    rememberElement(wranglerId, meta.domPath);
+    out.push({
+      element: { wranglerId, ...meta },
+      computed: getComputedSubset(el),
+    });
+  }
+  return out;
 }

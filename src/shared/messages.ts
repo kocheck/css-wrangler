@@ -1,6 +1,11 @@
 import type { BreakpointKey, CssState, TierProperty } from "./constants";
 import type { ElementRef, StylingSystem } from "./types";
 
+export interface SiblingPayload {
+  element: ElementRef;
+  computed: Partial<Record<TierProperty, string>>;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Panel → Content                                                           */
 /* ------------------------------------------------------------------------- */
@@ -39,6 +44,23 @@ export interface DetectStylingMsg {
   type: "detect-styling";
 }
 
+export interface ForceStateMsg {
+  type: "force-state";
+  wranglerId: string;
+  state: CssState;
+}
+
+export interface TagSiblingsMsg {
+  type: "tag-siblings";
+  excludeWranglerId: string;
+  selector: string;
+}
+
+export interface TagSiblingsResponse {
+  ok: true;
+  siblings: SiblingPayload[];
+}
+
 /* ------------------------------------------------------------------------- */
 /* Content → Panel                                                           */
 /* ------------------------------------------------------------------------- */
@@ -53,6 +75,8 @@ export interface ElementPickedMsg {
   type: "element-picked";
   element: ElementRef;
   computed: Partial<Record<TierProperty, string>>;
+  similarSelector: string | null;
+  similarCount: number;
 }
 
 export interface PickCancelledMsg {
@@ -76,7 +100,9 @@ export type PanelToContent =
   | ApplyEditMsg
   | RemoveEditMsg
   | ClearAllMsg
-  | DetectStylingMsg;
+  | DetectStylingMsg
+  | ForceStateMsg
+  | TagSiblingsMsg;
 
 export type ContentToPanel = PongMsg | ElementPickedMsg | PickCancelledMsg | ContentReadyMsg;
 

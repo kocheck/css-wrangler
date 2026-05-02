@@ -123,6 +123,14 @@ export function tagElement(el: Element, wranglerId: string): void {
   el.classList.add(wranglerId);
 }
 
+export function setForceStateClass(wranglerId: string, state: CssState): void {
+  const el = findElementByWranglerId(wranglerId);
+  if (!el) return;
+  el.classList.remove(FORCE_HOVER_CLASS, FORCE_FOCUS_CLASS);
+  if (state === "hover") el.classList.add(FORCE_HOVER_CLASS);
+  if (state === "focus") el.classList.add(FORCE_FOCUS_CLASS);
+}
+
 export function findElementByWranglerId(wranglerId: string): Element | null {
   return document.querySelector(`.${CSS.escape(wranglerId)}`);
 }
