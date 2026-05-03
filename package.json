@@ -15,11 +15,14 @@
     "tokens": "node scripts/build-tokens.mjs",
     "tokens:check": "node scripts/build-tokens.mjs --check",
     "design:lint": "design.md lint DESIGN.md",
-    "design:diff": "design.md diff"
+    "design:diff": "design.md diff",
+    "bridge": "tsx bridge/src/cli.ts",
+    "bridge:typecheck": "tsc -p bridge/tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "ws": "^8.18.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -31,8 +34,10 @@
     "@types/node": "^25.6.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
     "js-yaml": "^4.1.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.7"
   }

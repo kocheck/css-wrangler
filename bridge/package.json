@@ -1,0 +1,11 @@
+{
+  "name": "@css-wrangler/bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local WebSocket bridge between the Figma plugin and the Chrome extension panel.",
+  "main": "src/cli.ts",
+  "bin": {
+    "css-wrangler-bridge": "src/cli.ts"
+  }
+}
