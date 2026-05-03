@@ -15,6 +15,7 @@ Only these files (and dotfiles) belong at the repo root.
 - tsconfig.json
 - vite.config.ts
 - biome.json
+- vercel.json
 
 (dotfiles like `.gitignore`, `.env*`, `.claude/` are always allowed at root)
 

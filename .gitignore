@@ -10,3 +10,5 @@ dist
 web/.next
 web/node_modules
 web/next-env.d.ts
+web/.vercel
+.vercel
