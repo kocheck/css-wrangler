@@ -1,8 +1,11 @@
+import type { PushChangesMsg, TargetRef } from "@shared/bridge-messages";
 import type { BreakpointKey, CssState, TierProperty } from "@shared/constants";
 import type { TagSiblingsResponse } from "@shared/messages";
 import { nanoid } from "@shared/nanoid";
 import type { Edit, ElementRef, PropertyChange, StylingSystem } from "@shared/types";
 import { create } from "zustand";
+import { send as sendBridge } from "../lib/bridge-client";
+import { buildPushFromEdit, targetRefForEdit } from "../lib/figma-mapping";
 import { sendToContent } from "./messageBridge";
 
 interface EditState {
@@ -25,6 +28,10 @@ interface EditState {
     selector: string;
     count: number;
   } | null;
+  /** the *other* side's currently-selected target — Figma node when bridge is connected */
+  otherSideTarget: TargetRef | null;
+  /** transient banner for bridge-related feedback (auto-clears) */
+  bridgeNotice: string | null;
 }
 
 interface EditActions {
@@ -53,7 +60,13 @@ interface EditActions {
   toggleForceState(editId: string): Promise<void>;
   applyToSimilar(editId: string): Promise<void>;
   dismissSiblingPrompt(): void;
+  pushSelectedToFigma(): boolean;
+  applyFromFigma(msg: PushChangesMsg): Promise<void>;
+  setOtherSideTarget(target: TargetRef | null): void;
+  setBridgeNotice(message: string | null): void;
 }
+
+let bridgeNoticeTimer: number | undefined;
 
 const changeKey = (s: CssState, b: BreakpointKey, p: TierProperty) => `${s}|${b}|${p}`;
 
@@ -76,6 +89,8 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   selectedStateByEdit: {},
   forceStateByEdit: {},
   pendingSibling: null,
+  otherSideTarget: null,
+  bridgeNotice: null,
 
   setSource: (url, stylingSystem) => set({ url, stylingSystem }),
   setContentReady: (ready) => set({ contentReady: ready }),
@@ -121,6 +136,14 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
           ? { editId: id, selector: similarSelector, count: similarCount }
           : null,
     }));
+    const justAdded = get().edits[get().edits.length - 1];
+    if (justAdded) {
+      sendBridge({
+        type: "echo",
+        from: "panel",
+        target: targetRefForEdit(justAdded),
+      });
+    }
   },
 
   applyChange: async ({ editId, state, breakpoint, property, value }) => {
@@ -173,6 +196,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   removeEdit: async (editId) => {
     const edit = get().edits.find((e) => e.id === editId);
     if (!edit) return;
+    const wasSelected = get().selectedId === editId;
     set((s) => {
       const { [editId]: _selectedDrop, ...selectedRest } = s.selectedStateByEdit;
       const { [editId]: _forceDrop, ...forceRest } = s.forceStateByEdit;
@@ -184,6 +208,9 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
         pendingSibling: s.pendingSibling?.editId === editId ? null : s.pendingSibling,
       };
     });
+    if (wasSelected) {
+      sendBridge({ type: "echo", from: "panel", target: null });
+    }
     try {
       await sendToContent({ type: "remove-edit", wranglerId: edit.element.wranglerId });
     } catch (err) {
@@ -200,6 +227,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
       forceStateByEdit: {},
       pendingSibling: null,
     });
+    sendBridge({ type: "echo", from: "panel", target: null });
     try {
       await sendToContent({ type: "clear-all" });
     } catch (err) {
@@ -256,7 +284,15 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     );
   },
 
-  selectEdit: (id) => set({ selectedId: id }),
+  selectEdit: (id) => {
+    set({ selectedId: id });
+    const edit = id ? get().edits.find((e) => e.id === id) : null;
+    sendBridge({
+      type: "echo",
+      from: "panel",
+      target: edit ? targetRefForEdit(edit) : null,
+    });
+  },
 
   setSelectedState: (editId, state) =>
     set((s) => ({ selectedStateByEdit: { ...s.selectedStateByEdit, [editId]: state } })),
@@ -349,4 +385,63 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   },
 
   dismissSiblingPrompt: () => set({ pendingSibling: null }),
+
+  setOtherSideTarget: (target) => {
+    const prev = get().otherSideTarget;
+    if (prev?.id === target?.id && prev?.display === target?.display) return;
+    set({ otherSideTarget: target });
+  },
+
+  setBridgeNotice: (message) => {
+    if (bridgeNoticeTimer !== undefined) {
+      window.clearTimeout(bridgeNoticeTimer);
+      bridgeNoticeTimer = undefined;
+    }
+    set({ bridgeNotice: message });
+    if (message) {
+      bridgeNoticeTimer = window.setTimeout(() => {
+        bridgeNoticeTimer = undefined;
+        set({ bridgeNotice: null });
+      }, 4000);
+    }
+  },
+
+  pushSelectedToFigma: () => {
+    const id = get().selectedId;
+    if (!id) {
+      get().setBridgeNotice("Pick an element first to push to Figma");
+      return false;
+    }
+    const edit = get().edits.find((e) => e.id === id);
+    if (!edit || edit.changes.length === 0) {
+      get().setBridgeNotice("No edits to push — change a property first");
+      return false;
+    }
+    const msg = buildPushFromEdit(edit);
+    const ok = sendBridge(msg);
+    if (!ok) get().setBridgeNotice("Bridge offline — run `pnpm bridge`");
+    return ok;
+  },
+
+  applyFromFigma: async (msg) => {
+    const id = get().selectedId;
+    if (!id) {
+      get().setBridgeNotice(
+        `Figma pushed ${msg.changes.length} ${msg.changes.length === 1 ? "change" : "changes"} but no element is picked here`,
+      );
+      return;
+    }
+    await Promise.all(
+      msg.changes.map((change) =>
+        get().applyChange({
+          editId: id,
+          state: change.state,
+          breakpoint: change.breakpoint,
+          property: change.property,
+          value: change.to,
+        }),
+      ),
+    );
+    get().setOtherSideTarget(msg.target);
+  },
 }));

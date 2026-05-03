@@ -1,0 +1,12 @@
+{
+  "name": "CSS Wrangler Bridge",
+  "id": "css-wrangler-bridge",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["ws://localhost:9123"],
+    "reasoning": "Local WebSocket bridge for syncing CSS edits between this plugin and the CSS Wrangler Chrome extension."
+  }
+}

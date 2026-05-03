@@ -100,6 +100,50 @@
   }
 }
 
+.bridge-pill {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 1px var(--sp-3);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+}
+
+.bridge-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-quaternary);
+}
+
+.bridge-pill[data-status="connected"] {
+  color: var(--fg-primary);
+}
+.bridge-pill[data-status="connected"] .dot {
+  background: var(--accent-applied);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent-applied) 60%, transparent);
+}
+
+.bridge-pill[data-status="connecting"] .dot {
+  background: var(--fg-secondary);
+  animation: bridge-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes bridge-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .url-row {
   grid-column: 1 / -1;
   display: flex;
@@ -1165,4 +1209,146 @@
 .blocked-schemes li::before {
   content: "·  ";
   color: var(--fg-quaternary);
+}
+
+/* ── Push to Figma action bar ──────────────────────────── */
+
+.push-to-figma {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--fg-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-instrument), border-color var(--motion-fast)
+    var(--ease-instrument), color var(--motion-fast) var(--ease-instrument), transform
+    var(--motion-fast) var(--ease-instrument);
+}
+
+.push-to-figma .push-label {
+  flex: 1;
+  text-align: left;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.push-to-figma .push-arrow {
+  flex: 0 0 auto;
+  color: currentColor;
+  opacity: 0.6;
+  transition: transform var(--motion-fast) var(--ease-instrument), opacity var(--motion-fast)
+    var(--ease-instrument);
+}
+
+/* Ready: there are unpushed edits, bridge connected — pull the eye */
+.push-to-figma[data-state="ready"] {
+  color: var(--fg-primary);
+  border-color: color-mix(in srgb, var(--accent-applied) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-applied) 8%, var(--bg-elev-2));
+}
+.push-to-figma[data-state="ready"] .push-arrow {
+  color: var(--accent-applied);
+  opacity: 1;
+}
+.push-to-figma[data-state="ready"]:hover {
+  background: color-mix(in srgb, var(--accent-applied) 16%, var(--bg-elev-2));
+  border-color: var(--accent-applied);
+  transform: translateY(-1px);
+}
+.push-to-figma[data-state="ready"]:hover .push-arrow {
+  transform: translateX(3px);
+}
+.push-to-figma[data-state="ready"]:active {
+  transform: translateY(0);
+}
+
+/* Sent: confirmation flash */
+.push-to-figma[data-state="sent"] {
+  color: var(--bg-page);
+  background: var(--accent-applied);
+  border-color: var(--accent-applied);
+  cursor: default;
+}
+.push-to-figma[data-state="sent"] .push-arrow {
+  color: var(--bg-page);
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* Idle: nothing to push, but bridge is up — keep visible but quiet */
+.push-to-figma[data-state="idle"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Bridge offline */
+.push-to-figma[data-state="offline"],
+.push-to-figma[data-state="blocked"] {
+  color: var(--accent-diverges);
+  border-color: color-mix(in srgb, var(--accent-diverges) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-diverges) 6%, var(--bg-elev-2));
+  cursor: not-allowed;
+}
+.push-to-figma[data-state="offline"] .push-arrow,
+.push-to-figma[data-state="blocked"] .push-arrow {
+  color: var(--accent-diverges);
+  opacity: 0.7;
+}
+
+/* ── Other side target row (Figma echo) ────────────────── */
+
+.other-side-row {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--type-caption);
+  color: var(--fg-secondary);
+  grid-column: 1 / -1;
+}
+.other-side-row .label {
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-size: var(--type-micro);
+}
+.other-side-row .other-target {
+  color: var(--fg-primary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex: 1;
+}
+
+.bridge-notice {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: var(--type-caption);
+  color: var(--fg-primary);
+  background: color-mix(in srgb, var(--accent-applied) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-applied) 40%, transparent);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  animation: bridge-notice-in 180ms ease-out;
+}
+
+@keyframes bridge-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
