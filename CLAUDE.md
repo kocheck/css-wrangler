@@ -281,7 +281,9 @@ muscat/
 ├── DESIGN.md                          # aesthetic + token source of truth
 ├── README.md
 ├── .claude/repo-rules.md              # tidy-repo conventions
-└── .context/                          # Conductor scratch (gitignored)
+├── .context/                          # Conductor scratch (gitignored)
+└── web/                               # Next.js landing page (separate package)
+                                       # See web/CLAUDE.md for conventions
 ```
 
 ## When in doubt
@@ -292,3 +294,5 @@ muscat/
 - Repo layout/conventions → this file + `.claude/repo-rules.md`
 - A weird bug in the picker, observer, or selectors → start by reproducing
   on github.com. The DOM there exercises most edge cases.
+- Landing-page conventions and the test-station→feature contract →
+  `web/CLAUDE.md`

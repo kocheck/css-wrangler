@@ -1,0 +1,75 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.btnBase {
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: color var(--motion-fast) var(--ease-instrument), border-color var(--motion-fast)
+    var(--ease-instrument);
+}
+
+.primary {
+  color: var(--fg-secondary);
+  border: 1px solid var(--border-strong);
+  cursor: default;
+}
+
+.tooltipWrap {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + var(--sp-3));
+  left: 0;
+  width: max-content;
+  /* one-off tooltip width; not promoted to a token because no other component uses this size */
+  max-width: 320px;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--type-caption);
+  letter-spacing: var(--tracking-normal);
+  text-transform: none;
+  line-height: var(--leading-normal);
+  color: var(--fg-secondary);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(var(--sp-1));
+  transition: opacity var(--motion-base) var(--ease-instrument), transform var(--motion-base)
+    var(--ease-instrument);
+}
+
+.tooltipWrap:hover .tooltip,
+.tooltipWrap:focus-within .tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.secondary {
+  color: var(--fg-secondary);
+  border: 1px solid var(--border-hairline);
+  gap: var(--sp-2);
+}
+
+.secondary:hover,
+.secondary:focus-visible {
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+  outline: none;
+}

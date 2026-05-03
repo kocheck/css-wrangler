@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * build-tokens.mjs
- * Generates src/panel/styles/tokens.css from the YAML frontmatter in DESIGN.md.
+ * Generates tokens.css to both src/panel/styles/ and web/app/styles/ from
+ * the YAML frontmatter in DESIGN.md.
  *
  * Mapping:
  *   colors.{name}        → --{name}
@@ -19,8 +20,9 @@
  * NOT codegen'd to CSS.
  *
  * Flags:
- *   --check   Regenerate to memory and diff against the existing tokens.css.
- *             Exit 1 on drift. Used by `pnpm tokens:check` in CI.
+ *   --check   Regenerate to memory and diff against the existing tokens.css
+ *             outputs. Exit 1 on drift in either. Used by `pnpm tokens:check`
+ *             in CI.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -32,7 +34,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const DESIGN_MD = join(ROOT, "DESIGN.md");
 const TEMPLATE = join(__dirname, "tokens.css.template");
-const OUT = join(ROOT, "src/panel/styles/tokens.css");
+const OUTPUTS = [
+  join(ROOT, "src/panel/styles/tokens.css"),
+  join(ROOT, "web/app/styles/tokens.css"),
+];
 
 /** Flatten a single group with its CSS-variable prefix. */
 const GROUPS = [
@@ -106,21 +111,30 @@ const check = process.argv.includes("--check");
 const next = build();
 
 if (check) {
-  let current = "";
-  try {
-    current = readFileSync(OUT, "utf8");
-  } catch {
-    /* missing — treat as drift */
+  let drift = false;
+  for (const out of OUTPUTS) {
+    let current = "";
+    try {
+      current = readFileSync(out, "utf8");
+    } catch (err) {
+      // Missing file → drift. Other I/O errors (EACCES, EISDIR) need to surface.
+      if (err.code !== "ENOENT") throw err;
+    }
+    if (current !== next) {
+      const path = relative(ROOT, out);
+      console.error(`✗ ${path} is out of sync with DESIGN.md`);
+      drift = true;
+    }
   }
-  if (current !== next) {
-    const path = relative(ROOT, OUT);
-    console.error(`✗ ${path} is out of sync with DESIGN.md`);
-    console.error("  Run `pnpm tokens` and commit the regenerated file.");
+  if (drift) {
+    console.error("  Run `pnpm tokens` and commit the regenerated files.");
     process.exit(1);
   }
-  console.log("✓ tokens.css in sync with DESIGN.md");
+  console.log("✓ tokens.css in sync with DESIGN.md (both outputs)");
   process.exit(0);
 }
 
-writeFileSync(OUT, next);
-console.log(`✓ wrote ${relative(ROOT, OUT)}`);
+for (const out of OUTPUTS) {
+  writeFileSync(out, next);
+  console.log(`✓ wrote ${relative(ROOT, out)}`);
+}

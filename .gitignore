@@ -8,3 +8,8 @@ figma-plugin/dist
 .env
 .env.local
 .superpowers/
+web/.next
+web/node_modules
+web/next-env.d.ts
+web/.vercel
+.vercel

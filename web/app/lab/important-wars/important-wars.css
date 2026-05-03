@@ -1,0 +1,71 @@
+/* Station 08 — every rule pins color, padding, font-size, and background
+   with !important. The extension's injector must still win. Hex literals
+   are intentional — this CSS is the styling under test. */
+
+.hero {
+  background: #ff2bb4 !important;
+  color: #1a1a1a !important;
+  padding: 28px 24px !important;
+  font-size: 14px !important;
+  border-radius: 4px;
+}
+
+.hero-title {
+  background: #ffd700 !important;
+  color: #1a1a1a !important;
+  padding: 16px 24px !important;
+  font-size: 28px !important;
+  margin: 0;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.hero-body {
+  background: #00ffd5 !important;
+  color: #002b25 !important;
+  padding: 14px 18px !important;
+  font-size: 16px !important;
+  margin: 16px 0 0 0;
+  border-radius: 4px;
+}
+
+.cta {
+  background: #00ff5e !important;
+  color: #001f0a !important;
+  padding: 18px 32px !important;
+  font-size: 18px !important;
+  border: 0;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-top: 24px;
+  cursor: pointer;
+}
+
+.card {
+  background: #ff5500 !important;
+  color: #1a0d00 !important;
+  padding: 24px !important;
+  font-size: 14px !important;
+  margin-top: 24px;
+  border-radius: 4px;
+}
+
+.card-title {
+  background: #ffe600 !important;
+  color: #1a1a00 !important;
+  padding: 10px 14px !important;
+  font-size: 22px !important;
+  margin: 0;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.card-body {
+  background: #d8b4ff !important;
+  color: #1f0a3a !important;
+  padding: 14px 18px !important;
+  font-size: 15px !important;
+  margin: 14px 0 0 0;
+  border-radius: 4px;
+}

@@ -20,7 +20,12 @@
     "bridge:typecheck": "tsc -p bridge/tsconfig.json --noEmit",
     "figma:build": "pnpm -C figma-plugin build",
     "figma:watch": "pnpm -C figma-plugin watch",
-    "figma:typecheck": "tsc -p figma-plugin/tsconfig.json --noEmit"
+    "figma:typecheck": "tsc -p figma-plugin/tsconfig.json --noEmit",
+    "web:dev": "pnpm --dir web dev",
+    "web:build": "pnpm tokens && pnpm --dir web build",
+    "web:typecheck": "pnpm --dir web typecheck",
+    "web:lint": "pnpm --dir web lint",
+    "web:install": "pnpm --dir web install"
   },
   "dependencies": {
     "react": "^18.3.1",
