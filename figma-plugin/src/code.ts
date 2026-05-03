@@ -64,7 +64,7 @@ figma.ui.onmessage = async (raw: unknown) => {
       return;
     }
     const result = await applyChangesToNode(node, m.changes);
-    figma.commitUndo();
+    if (result.appliedCount > 0) figma.commitUndo();
     const out: ApplyResultMsg = {
       type: "apply-result",
       ok: true,

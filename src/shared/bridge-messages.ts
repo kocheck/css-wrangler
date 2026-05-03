@@ -33,12 +33,4 @@ export interface EchoMsg {
   target: TargetRef | null;
 }
 
-export interface AckMsg {
-  type: "ack";
-  for: "push-changes";
-  ok: boolean;
-  appliedTo: TargetRef | null;
-  reason?: string;
-}
-
-export type BridgeMessage = HelloMsg | PushChangesMsg | EchoMsg | AckMsg;
+export type BridgeMessage = HelloMsg | PushChangesMsg | EchoMsg;

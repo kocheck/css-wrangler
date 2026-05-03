@@ -29,6 +29,8 @@ interface EditState {
     count: number;
   } | null;
   otherSideTarget: { display: string; kind: "figma-node" } | null;
+  /** transient banner for bridge-related feedback (auto-clears) */
+  bridgeNotice: string | null;
 }
 
 interface EditActions {
@@ -60,7 +62,10 @@ interface EditActions {
   pushSelectedToFigma(): boolean;
   applyFromFigma(msg: PushChangesMsg): Promise<void>;
   setOtherSideTarget(target: { display: string; kind: "figma-node" } | null): void;
+  setBridgeNotice(message: string | null): void;
 }
+
+let bridgeNoticeTimer: number | undefined;
 
 const changeKey = (s: CssState, b: BreakpointKey, p: TierProperty) => `${s}|${b}|${p}`;
 
@@ -84,6 +89,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   forceStateByEdit: {},
   pendingSibling: null,
   otherSideTarget: null,
+  bridgeNotice: null,
 
   setSource: (url, stylingSystem) => set({ url, stylingSystem }),
   setContentReady: (ready) => set({ contentReady: ready }),
@@ -381,18 +387,45 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
 
   setOtherSideTarget: (target) => set({ otherSideTarget: target }),
 
+  setBridgeNotice: (message) => {
+    if (bridgeNoticeTimer !== undefined) {
+      window.clearTimeout(bridgeNoticeTimer);
+      bridgeNoticeTimer = undefined;
+    }
+    set({ bridgeNotice: message });
+    if (message) {
+      bridgeNoticeTimer = window.setTimeout(() => {
+        bridgeNoticeTimer = undefined;
+        set({ bridgeNotice: null });
+      }, 4000);
+    }
+  },
+
   pushSelectedToFigma: () => {
     const id = get().selectedId;
-    if (!id) return false;
+    if (!id) {
+      get().setBridgeNotice("Pick an element first to push to Figma");
+      return false;
+    }
     const edit = get().edits.find((e) => e.id === id);
-    if (!edit || edit.changes.length === 0) return false;
+    if (!edit || edit.changes.length === 0) {
+      get().setBridgeNotice("No edits to push — change a property first");
+      return false;
+    }
     const msg = buildPushFromEdit(edit);
-    return sendBridge(msg);
+    const ok = sendBridge(msg);
+    if (!ok) get().setBridgeNotice("Bridge offline — run `pnpm bridge`");
+    return ok;
   },
 
   applyFromFigma: async (msg) => {
     const id = get().selectedId;
-    if (!id) return;
+    if (!id) {
+      get().setBridgeNotice(
+        `Figma pushed ${msg.changes.length} ${msg.changes.length === 1 ? "change" : "changes"} but no element is picked here`,
+      );
+      return;
+    }
     for (const change of msg.changes) {
       await get().applyChange({
         editId: id,

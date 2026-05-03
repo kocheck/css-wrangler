@@ -34,12 +34,16 @@ export function startServer(port: number): WebSocketServer {
         log(`= client ${client.id} hello as ${client.kind}`);
         return;
       }
+      log(`> ${client.kind}#${client.id} ${describe(msg)}`);
       const payload = JSON.stringify(msg);
+      let relayed = 0;
       for (const peer of clients) {
         if (peer === client) continue;
         if (peer.socket.readyState !== peer.socket.OPEN) continue;
         peer.socket.send(payload);
+        relayed++;
       }
+      if (relayed === 0) log(`  (no peers — message dropped)`);
     });
 
     socket.on("close", () => {
@@ -56,4 +60,15 @@ export function startServer(port: number): WebSocketServer {
 function log(msg: string): void {
   const ts = new Date().toISOString().slice(11, 19);
   console.log(`[bridge ${ts}] ${msg}`);
+}
+
+function describe(msg: BridgeMessage): string {
+  if (msg.type === "push-changes") {
+    const props = msg.changes.map((c) => `${c.property}=${c.to}`).join(", ");
+    return `push-changes target=${msg.target.display} [${props}]`;
+  }
+  if (msg.type === "echo") {
+    return `echo target=${msg.target?.display ?? "null"}`;
+  }
+  return msg.type;
 }

@@ -9,6 +9,7 @@ export default function Header() {
   const editsCount = useEditStore((s) => s.edits.length);
   const clearAll = useEditStore((s) => s.clearAll);
   const otherSide = useEditStore((s) => s.otherSideTarget);
+  const bridgeNotice = useEditStore((s) => s.bridgeNotice);
 
   let status: "ready" | "picking" | "blocked" = "ready";
   let statusLabel = "READY";
@@ -58,6 +59,7 @@ export default function Header() {
           </span>
         </div>
       )}
+      {bridgeNotice && <div className="bridge-notice">{bridgeNotice}</div>}
       <div className="url-row">
         <span className="label">SRC</span>
         <span className="url" title={url}>

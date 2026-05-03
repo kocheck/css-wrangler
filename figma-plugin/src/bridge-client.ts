@@ -1,3 +1,6 @@
+// MUST stay in sync with src/panel/lib/bridge-client.ts.
+// Duplicated because the Figma plugin lives in a separate workspace with its
+// own tsconfig + esbuild bundle (CLAUDE.md invariant 12).
 import {
   BRIDGE_PROTOCOL_VERSION,
   DEFAULT_BRIDGE_URL,
