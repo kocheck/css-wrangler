@@ -17,7 +17,10 @@
     "design:lint": "design.md lint DESIGN.md",
     "design:diff": "design.md diff",
     "bridge": "tsx bridge/src/cli.ts",
-    "bridge:typecheck": "tsc -p bridge/tsconfig.json --noEmit"
+    "bridge:typecheck": "tsc -p bridge/tsconfig.json --noEmit",
+    "figma:build": "pnpm -C figma-plugin build",
+    "figma:watch": "pnpm -C figma-plugin watch",
+    "figma:typecheck": "tsc -p figma-plugin/tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -28,6 +31,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@figma/plugin-typings": "^1.106.0",
     "@google/design.md": "^0.1.1",
     "@types/chrome": "^0.0.287",
     "@types/js-yaml": "^4.0.9",
@@ -36,6 +40,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.24.2",
     "js-yaml": "^4.1.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
