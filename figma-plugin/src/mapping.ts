@@ -55,13 +55,13 @@ export function readNodeProperties(node: SceneNode): ReadResult {
   }
 
   if ("paddingTop" in node) {
-    const map: Array<["paddingTop" | "paddingRight" | "paddingBottom" | "paddingLeft", "padding-top" | "padding-right" | "padding-bottom" | "padding-left"]> = [
+    const PADDING_MAP = [
       ["paddingTop", "padding-top"],
       ["paddingRight", "padding-right"],
       ["paddingBottom", "padding-bottom"],
       ["paddingLeft", "padding-left"],
-    ];
-    for (const [key, prop] of map) {
+    ] as const;
+    for (const [key, prop] of PADDING_MAP) {
       const v = (node as unknown as Record<string, number>)[key];
       if (typeof v === "number") {
         changes.push({ ...DEFAULTS, property: prop, from: "", to: `${v}px` });

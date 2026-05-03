@@ -5,6 +5,8 @@ export interface ApplyResult {
   warnings: string[];
 }
 
+const TEXT_PROPS = new Set(["font-size", "font-weight", "line-height", "letter-spacing"]);
+
 export async function applyChangesToNode(
   node: SceneNode,
   changes: PropertyChange[],
@@ -12,13 +14,22 @@ export async function applyChangesToNode(
   const warnings: string[] = [];
   let applied = 0;
 
+  // Pre-load any font needed by text-prop changes once, instead of inside each
+  // applyOne call. Figma's loadFontAsync is the dominant cost for text edits.
+  if (node.type === "TEXT" && changes.some((c) => TEXT_PROPS.has(c.property))) {
+    const font = node.fontName;
+    if (typeof font !== "symbol") {
+      await figma.loadFontAsync(font);
+    }
+  }
+
   for (const change of changes) {
     if (change.state !== "default" || change.breakpoint !== "desktop") {
       warnings.push(`skipped ${change.property} (state/breakpoint not supported in Figma)`);
       continue;
     }
     try {
-      const did = await applyOne(node, change);
+      const did = applyOne(node, change);
       if (did) applied++;
       else warnings.push(`unsupported on this node: ${change.property}`);
     } catch (err) {
@@ -28,7 +39,7 @@ export async function applyChangesToNode(
   return { appliedCount: applied, warnings };
 }
 
-async function applyOne(node: SceneNode, change: PropertyChange): Promise<boolean> {
+function applyOne(node: SceneNode, change: PropertyChange): boolean {
   switch (change.property) {
     case "background-color":
     case "color": {
@@ -73,10 +84,9 @@ async function applyOne(node: SceneNode, change: PropertyChange): Promise<boolea
     case "font-weight":
     case "line-height":
     case "letter-spacing": {
+      // Font already loaded upfront in applyChangesToNode.
       if (node.type !== "TEXT") return false;
-      const font = node.fontName;
-      if (typeof font === "symbol") return false;
-      await figma.loadFontAsync(font);
+      if (typeof node.fontName === "symbol") return false;
       switch (change.property) {
         case "font-size":
           (node as unknown as { fontSize: number }).fontSize = parsePx(change.to);

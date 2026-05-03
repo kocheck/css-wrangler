@@ -1,4 +1,4 @@
-import type { PushChangesMsg } from "@shared/bridge-messages";
+import type { PushChangesMsg, TargetRef } from "@shared/bridge-messages";
 import type { BreakpointKey, CssState, TierProperty } from "@shared/constants";
 import type { TagSiblingsResponse } from "@shared/messages";
 import { nanoid } from "@shared/nanoid";
@@ -28,7 +28,8 @@ interface EditState {
     selector: string;
     count: number;
   } | null;
-  otherSideTarget: { display: string; kind: "figma-node" } | null;
+  /** the *other* side's currently-selected target — Figma node when bridge is connected */
+  otherSideTarget: TargetRef | null;
   /** transient banner for bridge-related feedback (auto-clears) */
   bridgeNotice: string | null;
 }
@@ -61,7 +62,7 @@ interface EditActions {
   dismissSiblingPrompt(): void;
   pushSelectedToFigma(): boolean;
   applyFromFigma(msg: PushChangesMsg): Promise<void>;
-  setOtherSideTarget(target: { display: string; kind: "figma-node" } | null): void;
+  setOtherSideTarget(target: TargetRef | null): void;
   setBridgeNotice(message: string | null): void;
 }
 
@@ -385,7 +386,11 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
 
   dismissSiblingPrompt: () => set({ pendingSibling: null }),
 
-  setOtherSideTarget: (target) => set({ otherSideTarget: target }),
+  setOtherSideTarget: (target) => {
+    const prev = get().otherSideTarget;
+    if (prev?.id === target?.id && prev?.display === target?.display) return;
+    set({ otherSideTarget: target });
+  },
 
   setBridgeNotice: (message) => {
     if (bridgeNoticeTimer !== undefined) {
@@ -426,17 +431,17 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
       );
       return;
     }
-    for (const change of msg.changes) {
-      await get().applyChange({
-        editId: id,
-        state: change.state,
-        breakpoint: change.breakpoint,
-        property: change.property,
-        value: change.to,
-      });
-    }
-    set({
-      otherSideTarget: { display: msg.target.display, kind: "figma-node" },
-    });
+    await Promise.all(
+      msg.changes.map((change) =>
+        get().applyChange({
+          editId: id,
+          state: change.state,
+          breakpoint: change.breakpoint,
+          property: change.property,
+          value: change.to,
+        }),
+      ),
+    );
+    get().setOtherSideTarget(msg.target);
   },
 }));

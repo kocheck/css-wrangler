@@ -6,6 +6,9 @@ interface Props {
   editId: string;
 }
 
+/** CSS contract: every value here must have a matching `[data-state="…"]` rule in panel.css. */
+type PushButtonState = "idle" | "ready" | "sent" | "blocked" | "offline";
+
 export default function PushToFigmaButton({ editId }: Props) {
   const [status, setStatus] = useState<BridgeStatus>(getStatus());
   const [flash, setFlash] = useState<"sent" | "blocked" | null>(null);
@@ -28,7 +31,7 @@ export default function PushToFigmaButton({ editId }: Props) {
   }
 
   let label = `Push ${changeCount} ${changeCount === 1 ? "edit" : "edits"} to Figma`;
-  let state: "idle" | "ready" | "sent" | "blocked" | "offline" = "idle";
+  let state: PushButtonState = "idle";
   if (flash === "sent") {
     label = "Sent to Figma";
     state = "sent";

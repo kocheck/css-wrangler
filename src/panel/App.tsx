@@ -19,12 +19,10 @@ export default function App() {
   const applyFromFigma = useEditStore((s) => s.applyFromFigma);
   const setOtherSideTarget = useEditStore((s) => s.setOtherSideTarget);
 
-  // start the bridge client on mount
   useEffect(() => {
     startBridgeClient();
   }, []);
 
-  // initial ping to detect whether the content script is reachable
   useEffect(() => {
     let cancelled = false;
     const probe = async () => {
@@ -49,7 +47,6 @@ export default function App() {
     };
   }, [setSource, setContentReady]);
 
-  // listen for content → panel messages
   useEffect(() => {
     return onContentMessage((msg) => {
       if (msg.type === "element-picked") {
@@ -63,7 +60,6 @@ export default function App() {
     });
   }, [receiveElement, setSource, setContentReady]);
 
-  // global shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") void cancelPick();
@@ -76,13 +72,12 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKey);
   }, [cancelPick, undo]);
 
-  // listen for bridge → panel messages (from Figma or other sources)
   useEffect(() => {
     return onBridgeMessage((msg) => {
       if (msg.type === "push-changes" && msg.from === "figma") {
         void applyFromFigma(msg);
       } else if (msg.type === "echo" && msg.from === "figma") {
-        setOtherSideTarget(msg.target ? { display: msg.target.display, kind: "figma-node" } : null);
+        setOtherSideTarget(msg.target);
       }
     });
   }, [applyFromFigma, setOtherSideTarget]);
