@@ -1,14 +1,36 @@
 # CSS Wrangler
 
-A Chrome extension that lets you visually edit CSS on any site (production or
-localhost) and copy the diff as an LLM-ready patch you paste into Claude Code.
+You open DevTools, find the element, copy the selector, open your editor, grep for
+it, edit the value, save, reload, and squint. You do this seventeen times for one
+button.
 
-Built for the loop: see → tweak in browser → describe → fix in source. CSS
-Wrangler closes the lossy middle by capturing exact selectors and changes with
-source-system hints, so Claude Code lands the edit in the right files on the
-first try.
+CSS Wrangler skips all of that.
 
-## Quick start
+Pick any element on any page. Tweak it live. Hit **Copy Patch** — you get a
+structured JSON diff wired straight into Claude Code. No more describing what you
+want. No more guessing which selector wins. Just: see it, change it, ship it.
+
+Built for the loop that actually happens: browser → editor → browser → editor →
+*why does it still look wrong* → repeat. CSS Wrangler closes the lossy middle.
+
+---
+
+## What it does
+
+- **Pick** any element on the page — keyboard-navigable, DOM-walker included
+- **Edit** live: typography, spacing, borders, background, layout — the full Tier 1
+  property set, with a panel that looks like a precision instrument, not a toy
+- **Preview** instantly via injected `<style>` with `!important` + a unique
+  `__wrangler-{id}` class. Beats specificity wars. Survives SPA re-renders.
+- **Copy Patch** → markdown-fenced JSON on your clipboard, ready to paste into
+  Claude Code. It includes selectors, property values, the styling system it
+  detected (Tailwind, CSS Modules, plain), and sibling groups for shared edits.
+- **Clear all** → everything gone, page restored, like you were never there
+- **Reload** → same. Session-only by design. The patch is the artifact.
+
+---
+
+## Install
 
 ```bash
 pnpm install
@@ -19,87 +41,103 @@ Then in Chrome:
 
 1. `chrome://extensions` → enable **Developer mode** (top right)
 2. **Load unpacked** → pick the `dist/` folder
-3. Open any site → click the **CSS Wrangler** action icon
+3. Navigate to any site → click the **CSS Wrangler** icon in the toolbar
 4. Side panel opens — click **Pick element** and start wrangling
 
-For development with HMR:
+For active development with panel HMR:
 
 ```bash
 pnpm dev
 ```
 
-then load `dist/` the same way. crxjs handles HMR for the panel; reload the
-extension manually after touching the content script or service worker.
+Load `dist/` the same way. crxjs handles HMR for the panel; after touching the
+content script or service worker, reload the extension manually in
+`chrome://extensions`.
 
-## Tier 1 (shipped in v0)
+---
 
-- Pick any element on the page (Esc to cancel, ↑/↓ to walk DOM)
-- Edit Tier 1 properties: typography, spacing, borders, background, layout
-- Live preview via injected `<style>` with `!important` + a unique
-  `__wrangler-{id}` class — wins specificity, source-order, and SPA re-render
-- Copy Patch → markdown-fenced JSON to clipboard, ready to paste into Claude
-- Clear all → wipes every injected style and class instantly
-- Reload → fresh slate, nothing persists
+## The patch format
 
-## Tier 2 (next)
+The clipboard output is the contract. Versioned at `"version": "1.0"`. Downstream
+consumers (Claude Code, future CLI) pattern-match on it, so its shape is stable.
 
-- `:hover` / `:focus-visible` editing with force-state preview toggles
-- Undo (`⌘Z` / `Ctrl+Z`) per-edit
-- Similar-element detection (HIGH-confidence: same tag + same class list)
+A patch looks like:
 
-## Tier 3 (after that)
-
-- Responsive breakpoints (mobile / tablet / desktop) with viewport simulation
-- Patch output emits `@media` rules grouped by breakpoint
-
-## Future work
-
-- **CLI bridge** (`css-wrangler watch`): a Node CLI that monitors clipboard for
-  patches and writes them to `~/.css-wrangler/latest.json` so Claude Code can
-  read directly without paste. The patch format already references this stable
-  location.
-- Pseudo-elements (`::before`, `::after`)
-- Transforms, animations, transitions
-- Shadow DOM, iframes
-- CSS custom properties / variables
-- Settings panel, "AI suggest" features
-- Automated tests (Playwright + extension loader)
-
-## Aesthetic & design tokens
-
-See [`DESIGN.md`](./DESIGN.md) — the panel is a deliberate Precision Instrument
-aesthetic, not generic devtool chrome.
-
-The YAML frontmatter in `DESIGN.md` is the **single source of truth** for
-design tokens. `src/panel/styles/tokens.css` is generated from it:
-
-```bash
-pnpm tokens         # regenerate tokens.css
-pnpm tokens:check   # CI: fail if tokens.css is out of sync
+```json
+{
+  "version": "1.0",
+  "edits": [
+    {
+      "selector": ".hero-cta",
+      "stylingSystem": "tailwind",
+      "property": "padding",
+      "from": "12px 24px",
+      "to": "16px 32px",
+      "tailwindHint": "py-4 px-8",
+      "siblingGroup": null
+    }
+  ]
+}
 ```
 
-`pnpm dev` and `pnpm build` re-run the codegen first. To change a token,
-edit the frontmatter and commit both files together. Never edit
-`tokens.css` directly — it has an `AUTO-GENERATED` header for a reason.
+Claude Code reads this and lands the change in the right file on the first try.
+That's the whole point.
 
-The codegen lives in `scripts/build-tokens.mjs` and the static template
-(noise SVG, hairline shorthand) is in `scripts/tokens.css.template`. The
-mapping rule from frontmatter → CSS variables is documented in the
-`DESIGN.md` frontmatter itself.
+---
+
+## Roadmap
+
+**Tier 2 — next**
+- `:hover` / `:focus-visible` editing with force-state preview (injector already
+  supports the sibling-class trick — UI just needs to expose it)
+- Undo (`⌘Z` / `Ctrl+Z`) per-edit
+- Similar-element detection for shared class edits
+
+**Tier 3 — after that**
+- Responsive breakpoints with viewport simulation
+- Patch output emits `@media` rules grouped by breakpoint
+
+**Future**
+- CLI bridge (`css-wrangler watch`) that writes patches to
+  `~/.css-wrangler/latest.json` so Claude Code can read without paste
+
+---
 
 ## Architecture
 
+Three runtime contexts, one message contract.
+
 ```
-src/
-  background/     service worker — opens side panel, otherwise idle
-  content/        in-page work: picker, injector, observer, selectors
-  panel/          React side panel UI, edit store, patch builder
-  shared/         types + message contract + constants
+background/   service worker — opens the side panel, nothing else
+content/      in-page: picker overlay, injected <style>, MutationObserver
+panel/        React side panel, edit store (zustand), patch builder
+shared/       types, message union, constants
 ```
 
-Three runtime contexts talk via `chrome.runtime` with a typed discriminated
-union (`src/shared/messages.ts`). The content script owns DOM, the panel owns
-edit state, and the service worker is just a launcher.
+Content script owns the DOM. Panel owns edit state. Service worker is just a
+launcher. They talk via a typed discriminated union in `src/shared/messages.ts`.
+MV3 ephemeral constraints apply: nothing meaningful lives in the service worker,
+all state is panel-side, reload wipes everything intentionally.
+
+---
+
+## Design
+
+The panel is a Precision Instrument. Dark. Dense. Monospace numerals. Zero
+decorative chrome. It's meant to look like something you'd trust for actual work,
+not a toy someone shipped in a weekend hackathon (even if it kind of was).
+
+Aesthetic source of truth: [`DESIGN.md`](./DESIGN.md).  
+Token source of truth: the YAML frontmatter in that same file.
+
+```bash
+pnpm tokens          # regenerate tokens.css from DESIGN.md frontmatter
+pnpm tokens:check    # CI: fail on drift
+```
+
+Never edit `tokens.css` directly. It has an `AUTO-GENERATED` header. It means it.
+
+---
 
 ## License
 

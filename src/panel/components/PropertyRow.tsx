@@ -1,4 +1,4 @@
-import type { TierProperty } from "@shared/constants";
+import type { CssState, TierProperty } from "@shared/constants";
 import type { Edit } from "@shared/types";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -11,22 +11,48 @@ import {
   rgbToHex,
   unitsFor,
 } from "../lib/parse-value";
+import { tailwindHintFor } from "../lib/tailwind-hint";
 import { useEditStore } from "../store/editStore";
 
 interface Props {
   edit: Edit;
   property: TierProperty;
+  state: CssState;
 }
 
-export default function PropertyRow({ edit, property }: Props) {
+const SCALE_PROPERTIES: ReadonlySet<TierProperty> = new Set([
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "gap",
+  "border-radius",
+  "font-size",
+]);
+
+function divergesFromScale(property: TierProperty, value: string): boolean {
+  if (!value || !value.trim()) return false;
+  if (!SCALE_PROPERTIES.has(property)) return false;
+  return tailwindHintFor(property, value) === null;
+}
+
+export default function PropertyRow({ edit, property, state }: Props) {
   const apply = useEditStore((s) => s.applyChange);
-  const baselineKey = `default|desktop|${property}`;
+  const baselineKey = `${state}|desktop|${property}`;
   const baseline = edit.baseline[baselineKey] ?? "";
   const change = edit.changes.find(
-    (c) => c.state === "default" && c.breakpoint === "desktop" && c.property === property,
+    (c) => c.state === state && c.breakpoint === "desktop" && c.property === property,
   );
   const currentValue = change?.to ?? baseline;
   const edited = Boolean(change);
+  const diverges = edited && divergesFromScale(property, currentValue);
+
+  const commit = (v: string) =>
+    apply({ editId: edit.id, state, breakpoint: "desktop", property, value: v });
 
   if (isColorProperty(property)) {
     return (
@@ -34,15 +60,8 @@ export default function PropertyRow({ edit, property }: Props) {
         property={property}
         value={currentValue}
         edited={edited}
-        onCommit={(v) =>
-          apply({
-            editId: edit.id,
-            state: "default",
-            breakpoint: "desktop",
-            property,
-            value: v,
-          })
-        }
+        diverges={diverges}
+        onCommit={commit}
       />
     );
   }
@@ -53,15 +72,8 @@ export default function PropertyRow({ edit, property }: Props) {
         property={property}
         value={currentValue}
         edited={edited}
-        onCommit={(v) =>
-          apply({
-            editId: edit.id,
-            state: "default",
-            breakpoint: "desktop",
-            property,
-            value: v,
-          })
-        }
+        diverges={diverges}
+        onCommit={commit}
       />
     );
   }
@@ -72,49 +84,59 @@ export default function PropertyRow({ edit, property }: Props) {
         property={property}
         value={currentValue}
         edited={edited}
-        onCommit={(v) =>
-          apply({
-            editId: edit.id,
-            state: "default",
-            breakpoint: "desktop",
-            property,
-            value: v,
-          })
-        }
+        diverges={diverges}
+        onCommit={commit}
       />
     );
   }
 
-  // generic text fallback
   return (
     <TextRow
       property={property}
       value={currentValue}
       edited={edited}
-      onCommit={(v) =>
-        apply({
-          editId: edit.id,
-          state: "default",
-          breakpoint: "desktop",
-          property,
-          value: v,
-        })
-      }
+      diverges={diverges}
+      onCommit={commit}
     />
   );
 }
 
-function NumericRow({
-  property,
-  value,
-  edited,
-  onCommit,
-}: {
+interface RowProps {
   property: TierProperty;
   value: string;
   edited: boolean;
+  diverges: boolean;
   onCommit: (v: string) => void;
+}
+
+function PropertyName({
+  edited,
+  diverges,
+  property,
+}: {
+  edited: boolean;
+  diverges: boolean;
+  property: TierProperty;
 }) {
+  return (
+    <span className="property-name">
+      <span className="edited-dot" aria-hidden="true" />
+      {property}
+      {diverges && (
+        <span className="diverges-badge" title="Value not on the design scale">
+          DIVERGES
+        </span>
+      )}
+      {edited && !diverges && (
+        <span className="edited-marker" aria-hidden="true">
+          ●
+        </span>
+      )}
+    </span>
+  );
+}
+
+function NumericRow({ property, value, edited, diverges, onCommit }: RowProps) {
   const parsed = useMemo(() => parseLength(value), [value]);
   const units = unitsFor(property);
   const [num, setNum] = useState(parsed.numeric);
@@ -132,8 +154,8 @@ function NumericRow({
   };
 
   return (
-    <div className="property-row" data-edited={edited}>
-      <span className="property-name">{property}</span>
+    <div className="property-row" data-edited={edited} data-diverges={diverges}>
+      <PropertyName edited={edited} diverges={diverges} property={property} />
       <span className="value-cell">
         <input
           type="number"
@@ -164,25 +186,15 @@ function NumericRow({
   );
 }
 
-function ColorRow({
-  property,
-  value,
-  edited,
-  onCommit,
-}: {
-  property: TierProperty;
-  value: string;
-  edited: boolean;
-  onCommit: (v: string) => void;
-}) {
+function ColorRow({ property, value, edited, diverges, onCommit }: RowProps) {
   const hex = useMemo(() => rgbToHex(value), [value]);
   const [color, setColor] = useState(hex);
 
   useEffect(() => setColor(hex), [hex]);
 
   return (
-    <div className="property-row" data-edited={edited}>
-      <span className="property-name">{property}</span>
+    <div className="property-row" data-edited={edited} data-diverges={diverges}>
+      <PropertyName edited={edited} diverges={diverges} property={property} />
       <span className="value-cell">
         <span className="color-swatch" style={{ background: color || "transparent" }} />
         <input
@@ -211,21 +223,11 @@ function ColorRow({
   );
 }
 
-function EnumRow({
-  property,
-  value,
-  edited,
-  onCommit,
-}: {
-  property: TierProperty;
-  value: string;
-  edited: boolean;
-  onCommit: (v: string) => void;
-}) {
+function EnumRow({ property, value, edited, diverges, onCommit }: RowProps) {
   const options = ENUM_OPTIONS[property] ?? [];
   return (
-    <div className="property-row" data-edited={edited}>
-      <span className="property-name">{property}</span>
+    <div className="property-row" data-edited={edited} data-diverges={diverges}>
+      <PropertyName edited={edited} diverges={diverges} property={property} />
       <span className="value-cell">
         <select
           className="unit"
@@ -247,22 +249,12 @@ function EnumRow({
   );
 }
 
-function TextRow({
-  property,
-  value,
-  edited,
-  onCommit,
-}: {
-  property: TierProperty;
-  value: string;
-  edited: boolean;
-  onCommit: (v: string) => void;
-}) {
+function TextRow({ property, value, edited, diverges, onCommit }: RowProps) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   return (
-    <div className="property-row" data-edited={edited}>
-      <span className="property-name">{property}</span>
+    <div className="property-row" data-edited={edited} data-diverges={diverges}>
+      <PropertyName edited={edited} diverges={diverges} property={property} />
       <span className="value-cell">
         <input
           type="text"
