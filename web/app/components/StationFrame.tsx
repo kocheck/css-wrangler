@@ -14,11 +14,9 @@ export function StationFrame({ stationNumber, stationName, testsBox, children }:
     <div className={styles.frame}>
       <header className={styles.topBar}>
         <h1 className={styles.title}>
-          <span className={styles.titleStation}>{"STATION"}</span>
+          STATION <span className={styles.titleNumber}>{`·${stationNumber}`}</span>
           <span className={styles.titleSep}>{" · "}</span>
-          <span className={styles.titleNumber}>{`·${stationNumber}`}</span>
-          <span className={styles.titleSep}>{" · "}</span>
-          <span className={styles.titleName}>{stationName}</span>
+          {stationName}
         </h1>
 
         <aside className={styles.testsBox} aria-label="What this tests">

@@ -23,10 +23,6 @@
   line-height: var(--leading-tight);
 }
 
-.titleStation {
-  color: var(--fg-primary);
-}
-
 .titleSep {
   color: var(--fg-quaternary);
 }
@@ -34,10 +30,6 @@
 .titleNumber {
   color: var(--fg-tertiary);
   font-variant-numeric: tabular-nums;
-}
-
-.titleName {
-  color: var(--fg-primary);
 }
 
 .testsBox {
