@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  // web/ pulls types from ../src/shared/* (see tsconfig path alias).
+  // Tells Next's file tracer the project boundary is the repo root.
   outputFileTracingRoot: "../",
 };
 
