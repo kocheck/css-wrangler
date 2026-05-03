@@ -17,7 +17,7 @@ export function Footer() {
           <span className={styles.left}>
             {"// CSS WRANGLER · v0.1 · MIT · 2026 · "}
             <a
-              href="https://github.com/kylekochanek/css-wrangler"
+              href="https://github.com/kocheck/css-wrangler"
               target="_blank"
               rel="noreferrer noopener"
             >

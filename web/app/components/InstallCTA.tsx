@@ -20,7 +20,7 @@ export function InstallCTA() {
         </span>
       </span>
       <a
-        href="https://github.com/kylekochanek/css-wrangler"
+        href="https://github.com/kocheck/css-wrangler"
         target="_blank"
         rel="noreferrer noopener"
         className={`${styles.btnBase} ${styles.secondary}`}

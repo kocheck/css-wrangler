@@ -86,7 +86,7 @@ Two buttons in a horizontal row with `var(--sp-4)` gap.
     > Pending Chrome Web Store review. Allegedly imminent. Build from source meanwhile.
 - **Secondary (linked, opens GitHub repo):**
   - Label: `▸ VIEW ON GITHUB`.
-  - `<a href="https://github.com/kylekochanek/css-wrangler" target="_blank" rel="noreferrer noopener">`. Same typography as primary. Border: `1px solid var(--border-hairline)`. On hover: border becomes `var(--border-strong)`, color `var(--fg-primary)`. Transition: `var(--motion-fast) var(--ease-instrument)`.
+  - `<a href="https://github.com/kocheck/css-wrangler" target="_blank" rel="noreferrer noopener">`. Same typography as primary. Border: `1px solid var(--border-hairline)`. On hover: border becomes `var(--border-strong)`, color `var(--fg-primary)`. Transition: `var(--motion-fast) var(--ease-instrument)`.
 
 ### FeatureRow
 
