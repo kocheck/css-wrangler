@@ -29,6 +29,9 @@ Only these files (and dotfiles) belong at the repo root.
 - `node_modules/` — package install. Gitignored.
 - `.claude/` — Claude session context (repo-rules, about-me, etc.).
 - `.context/` — Conductor agent scratch (gitignored).
+- `web/` — Next.js landing page (Vercel-hosted). Marketing route + `/lab`
+  test-station bench. See `web/CLAUDE.md` for landing-page conventions.
+  Independent `node_modules` and `pnpm-lock.yaml` (no workspaces).
 
 ## Routing rules
 
