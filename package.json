@@ -15,7 +15,12 @@
     "tokens": "node scripts/build-tokens.mjs",
     "tokens:check": "node scripts/build-tokens.mjs --check",
     "design:lint": "design.md lint DESIGN.md",
-    "design:diff": "design.md diff"
+    "design:diff": "design.md diff",
+    "web:dev": "pnpm --dir web dev",
+    "web:build": "pnpm tokens && pnpm --dir web build",
+    "web:typecheck": "pnpm --dir web typecheck",
+    "web:lint": "pnpm --dir web lint",
+    "web:install": "pnpm --dir web install"
   },
   "dependencies": {
     "react": "^18.3.1",
