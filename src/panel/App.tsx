@@ -4,7 +4,7 @@ import EditList from "./components/EditList";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import PickButton from "./components/PickButton";
-import { startBridgeClient } from "./lib/bridge-client";
+import { onMessage as onBridgeMessage, startBridgeClient } from "./lib/bridge-client";
 import { useEditStore } from "./store/editStore";
 import { onContentMessage, sendToContent } from "./store/messageBridge";
 
@@ -16,6 +16,8 @@ export default function App() {
   const undo = useEditStore((s) => s.undo);
   const contentReady = useEditStore((s) => s.contentReady);
   const url = useEditStore((s) => s.url);
+  const applyFromFigma = useEditStore((s) => s.applyFromFigma);
+  const setOtherSideTarget = useEditStore((s) => s.setOtherSideTarget);
 
   // start the bridge client on mount
   useEffect(() => {
@@ -73,6 +75,19 @@ export default function App() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [cancelPick, undo]);
+
+  // listen for bridge → panel messages (from Figma or other sources)
+  useEffect(() => {
+    return onBridgeMessage((msg) => {
+      if (msg.type === "push-changes" && msg.from === "figma") {
+        void applyFromFigma(msg);
+      } else if (msg.type === "echo" && msg.from === "figma") {
+        setOtherSideTarget(
+          msg.target ? { display: msg.target.display, kind: "figma-node" } : null,
+        );
+      }
+    });
+  }, [applyFromFigma, setOtherSideTarget]);
 
   return (
     <div className="app">
