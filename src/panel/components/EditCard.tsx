@@ -111,7 +111,6 @@ export default function EditCard({ edit, index, groupLabel, isSynced }: Props) {
                 <span>FORCE</span>
               </button>
             )}
-            <PushToFigmaButton editId={edit.id} />
           </div>
           {selectedState !== "default" && (
             <div className="state-hint">
@@ -140,6 +139,7 @@ export default function EditCard({ edit, index, groupLabel, isSynced }: Props) {
               <DiffSummary changes={edit.changes.filter((c) => c.state === selectedState)} />
             )}
           </div>
+          <PushToFigmaButton editId={edit.id} />
         </>
       )}
     </article>

@@ -16,7 +16,8 @@ export default function PushToFigmaButton({ editId }: Props) {
   useEffect(() => onStatus(setStatus), []);
 
   const offline = status !== "connected";
-  const empty = !edit || edit.changes.length === 0;
+  const changeCount = edit?.changes.length ?? 0;
+  const empty = changeCount === 0;
   const inactive = selectedId !== editId;
   const disabled = offline || empty || inactive;
 
@@ -26,10 +27,23 @@ export default function PushToFigmaButton({ editId }: Props) {
     window.setTimeout(() => setFlash(null), 1200);
   }
 
-  let label = "Push to Figma";
-  if (flash === "sent") label = "Pushed →";
-  else if (flash === "blocked") label = "No bridge";
-  else if (offline) label = "Bridge offline";
+  let label = `Push ${changeCount} ${changeCount === 1 ? "edit" : "edits"} to Figma`;
+  let state: "idle" | "ready" | "sent" | "blocked" | "offline" = "idle";
+  if (flash === "sent") {
+    label = "Sent to Figma";
+    state = "sent";
+  } else if (flash === "blocked") {
+    label = "Bridge offline";
+    state = "blocked";
+  } else if (offline) {
+    label = "Bridge offline — run pnpm bridge";
+    state = "offline";
+  } else if (empty) {
+    label = "Edit a property to push";
+    state = "idle";
+  } else {
+    state = "ready";
+  }
 
   return (
     <button
@@ -37,9 +51,19 @@ export default function PushToFigmaButton({ editId }: Props) {
       className="push-to-figma"
       onClick={handleClick}
       disabled={disabled}
-      data-flash={flash ?? undefined}
+      data-state={state}
     >
-      {label}
+      <span className="push-label">{label}</span>
+      <svg className="push-arrow" width="18" height="10" viewBox="0 0 18 10" aria-hidden="true">
+        <path
+          d="M0 5h14M11 1l4 4-4 4"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
+        />
+      </svg>
     </button>
   );
 }

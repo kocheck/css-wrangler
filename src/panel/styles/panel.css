@@ -1211,31 +1211,99 @@
   color: var(--fg-quaternary);
 }
 
-/* ── Push to Figma button ──────────────────────────────── */
+/* ── Push to Figma action bar ──────────────────────────── */
 
 .push-to-figma {
-  font-family: var(--font-mono);
-  font-size: var(--type-micro);
-  letter-spacing: var(--tracking-caps);
-  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--bg-elev-2);
   border: 1px solid var(--border-hairline);
-  background: transparent;
-  color: var(--fg-secondary);
-  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--fg-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  transition: all var(--motion-fast) var(--ease-instrument);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-instrument), border-color var(--motion-fast)
+    var(--ease-instrument), color var(--motion-fast) var(--ease-instrument), transform
+    var(--motion-fast) var(--ease-instrument);
 }
-.push-to-figma:hover:not(:disabled) {
+
+.push-to-figma .push-label {
+  flex: 1;
+  text-align: left;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.push-to-figma .push-arrow {
+  flex: 0 0 auto;
+  color: currentColor;
+  opacity: 0.6;
+  transition: transform var(--motion-fast) var(--ease-instrument), opacity var(--motion-fast)
+    var(--ease-instrument);
+}
+
+/* Ready: there are unpushed edits, bridge connected — pull the eye */
+.push-to-figma[data-state="ready"] {
   color: var(--fg-primary);
-  border-color: var(--fg-primary);
+  border-color: color-mix(in srgb, var(--accent-applied) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-applied) 8%, var(--bg-elev-2));
 }
-.push-to-figma:disabled {
-  opacity: 0.4;
+.push-to-figma[data-state="ready"] .push-arrow {
+  color: var(--accent-applied);
+  opacity: 1;
+}
+.push-to-figma[data-state="ready"]:hover {
+  background: color-mix(in srgb, var(--accent-applied) 16%, var(--bg-elev-2));
+  border-color: var(--accent-applied);
+  transform: translateY(-1px);
+}
+.push-to-figma[data-state="ready"]:hover .push-arrow {
+  transform: translateX(3px);
+}
+.push-to-figma[data-state="ready"]:active {
+  transform: translateY(0);
+}
+
+/* Sent: confirmation flash */
+.push-to-figma[data-state="sent"] {
+  color: var(--bg-page);
+  background: var(--accent-applied);
+  border-color: var(--accent-applied);
+  cursor: default;
+}
+.push-to-figma[data-state="sent"] .push-arrow {
+  color: var(--bg-page);
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* Idle: nothing to push, but bridge is up — keep visible but quiet */
+.push-to-figma[data-state="idle"] {
+  opacity: 0.55;
   cursor: not-allowed;
 }
-.push-to-figma[data-flash="sent"] {
-  border-color: var(--accent-applied);
-  color: var(--accent-applied);
+
+/* Bridge offline */
+.push-to-figma[data-state="offline"],
+.push-to-figma[data-state="blocked"] {
+  color: var(--accent-diverges);
+  border-color: color-mix(in srgb, var(--accent-diverges) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-diverges) 6%, var(--bg-elev-2));
+  cursor: not-allowed;
+}
+.push-to-figma[data-state="offline"] .push-arrow,
+.push-to-figma[data-state="blocked"] .push-arrow {
+  color: var(--accent-diverges);
+  opacity: 0.7;
 }
 
 /* ── Other side target row (Figma echo) ────────────────── */
