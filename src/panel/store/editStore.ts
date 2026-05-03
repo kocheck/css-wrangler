@@ -129,6 +129,14 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
           ? { editId: id, selector: similarSelector, count: similarCount }
           : null,
     }));
+    const justAdded = get().edits[get().edits.length - 1];
+    if (justAdded) {
+      sendBridge({
+        type: "echo",
+        from: "panel",
+        target: targetRefForEdit(justAdded),
+      });
+    }
   },
 
   applyChange: async ({ editId, state, breakpoint, property, value }) => {
@@ -181,6 +189,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   removeEdit: async (editId) => {
     const edit = get().edits.find((e) => e.id === editId);
     if (!edit) return;
+    const wasSelected = get().selectedId === editId;
     set((s) => {
       const { [editId]: _selectedDrop, ...selectedRest } = s.selectedStateByEdit;
       const { [editId]: _forceDrop, ...forceRest } = s.forceStateByEdit;
@@ -192,6 +201,9 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
         pendingSibling: s.pendingSibling?.editId === editId ? null : s.pendingSibling,
       };
     });
+    if (wasSelected) {
+      sendBridge({ type: "echo", from: "panel", target: null });
+    }
     try {
       await sendToContent({ type: "remove-edit", wranglerId: edit.element.wranglerId });
     } catch (err) {
@@ -208,6 +220,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
       forceStateByEdit: {},
       pendingSibling: null,
     });
+    sendBridge({ type: "echo", from: "panel", target: null });
     try {
       await sendToContent({ type: "clear-all" });
     } catch (err) {
@@ -264,7 +277,15 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     );
   },
 
-  selectEdit: (id) => set({ selectedId: id }),
+  selectEdit: (id) => {
+    set({ selectedId: id });
+    const edit = id ? get().edits.find((e) => e.id === id) : null;
+    sendBridge({
+      type: "echo",
+      from: "panel",
+      target: edit ? targetRefForEdit(edit) : null,
+    });
+  },
 
   setSelectedState: (editId, state) =>
     set((s) => ({ selectedStateByEdit: { ...s.selectedStateByEdit, [editId]: state } })),
