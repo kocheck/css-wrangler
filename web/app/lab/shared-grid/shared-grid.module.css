@@ -1,0 +1,72 @@
+/* Station 07 — Shared-class grid. Twelve siblings share the
+   `.card` class. Editing one should propose a sibling group.
+   Hex literals are intentional — this CSS is the styling under
+   test, not part of the design system. */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-5);
+}
+
+.card {
+  background: #fefefe;
+  border: 1px solid #e5e5e2;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: border-color 120ms ease;
+}
+
+.card:hover {
+  border-color: #c8c8c4;
+}
+
+.image {
+  height: 140px;
+  background: linear-gradient(135deg, #d4d8dd 0%, #b3b8bf 100%);
+  border-bottom: 1px solid #e5e5e2;
+}
+
+.title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #1a1a1e;
+  margin: 14px 16px 6px 16px;
+}
+
+.body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5a5a56;
+  margin: 0 16px 14px 16px;
+  flex: 1;
+}
+
+.footer {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a8a86;
+  border-top: 1px solid #ededea;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

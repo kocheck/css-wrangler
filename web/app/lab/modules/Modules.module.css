@@ -1,0 +1,89 @@
+/* Station 03 — CSS Modules. These class names will hash like
+   `Modules_heroTitle__a1b2c` at build time. The extension's
+   extractCssModulesName must strip the hash and return the meaningful
+   selector. Hex literals are intentional — this CSS is the styling
+   under test. */
+
+.dashboard {
+  background: #0f1115;
+  color: #e6e8eb;
+  padding: 28px;
+  border-radius: 8px;
+  border: 1px solid #1f2329;
+}
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #1f2329;
+}
+
+.heroTitle {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #f5f7fa;
+  margin: 0;
+}
+
+.heroBody {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8a909a;
+  margin: 0;
+  max-width: 48ch;
+}
+
+.cardRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.card {
+  background: #161a20;
+  border: 1px solid #232830;
+  border-radius: 6px;
+  padding: 16px 18px;
+}
+
+.cardLabel {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6e757f;
+  margin: 0;
+}
+
+.cardValue {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 26px;
+  font-weight: 500;
+  color: #f5f7fa;
+  margin: 8px 0 0 0;
+  letter-spacing: -0.01em;
+}
+
+.cardDelta {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: #4ade80;
+  margin: 4px 0 0 0;
+}
+
+.cardDeltaDown {
+  color: #f87171;
+}
+
+@media (max-width: 720px) {
+  .cardRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
