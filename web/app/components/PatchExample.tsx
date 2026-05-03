@@ -1,39 +1,26 @@
+import { toJsxRuntime } from "hast-util-to-jsx-runtime";
+import { Fragment, type ReactNode } from "react";
+import { jsx, jsxs } from "react/jsx-runtime";
+import { codeToHast } from "shiki";
 import styles from "./PatchExample.module.css";
+import { examplePatch } from "./patch-example-data";
 
-const PATCH_JSON = `{
-  "version": "1.0",
-  "source": "css-wrangler",
-  "url": "https://example.com",
-  "capturedAt": "2026-05-03T17:42:11.000Z",
-  "stylingSystem": "tailwind",
-  "breakpoints": { "mobile": 640, "tablet": 768, "desktop": 1024 },
-  "edits": [
-    {
-      "siblingGroup": null,
-      "element": {
-        "tag": "button",
-        "text": "Get started",
-        "role": "button",
-        "ariaLabel": null,
-        "selectors": [
-          { "type": "class", "value": ".hero-cta", "stability": "high" }
-        ],
-        "domPath": "main > section.hero > button.hero-cta"
-      },
-      "changes": [
-        { "property": "padding", "from": "12px 24px", "to": "16px 32px" }
-      ]
-    }
-  ]
-}`;
+async function highlight(code: string): Promise<ReactNode> {
+  const tree = await codeToHast(code, {
+    lang: "json",
+    theme: "vesper",
+  });
+  return toJsxRuntime(tree, { Fragment, jsx, jsxs });
+}
 
-export function PatchExample() {
+export async function PatchExample() {
+  const json = JSON.stringify(examplePatch, null, 2);
+  const highlighted = await highlight(json);
+
   return (
     <section className={styles.section}>
       <p className={styles.eyebrow}>{"THE PATCH FORMAT · v1.0"}</p>
-      <pre className={styles.frame}>
-        <code className={styles.code}>{PATCH_JSON}</code>
-      </pre>
+      <div className={styles.code}>{highlighted}</div>
       <p className={styles.trailing}>
         Versioned at 1.0. We&rsquo;re optimistic. Pattern-matched downstream by Claude Code; the
         shape doesn&rsquo;t change without a major bump.

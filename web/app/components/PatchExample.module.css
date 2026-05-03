@@ -13,22 +13,26 @@
   margin-bottom: var(--sp-5);
 }
 
-.frame {
+.code {
   background: var(--bg-elev-1);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-sm);
   padding: var(--sp-5);
   overflow-x: auto;
   margin: 0;
+  color: var(--fg-primary);
 }
 
-.code {
-  font-family: var(--font-mono);
+.code :global(pre.shiki) {
+  background: transparent !important;
+  margin: 0;
   font-size: var(--type-data);
   line-height: var(--leading-tight);
-  color: var(--fg-primary);
-  white-space: pre;
-  display: block;
+  overflow-x: auto;
+}
+
+.code :global(pre.shiki code) {
+  font-family: var(--font-mono);
 }
 
 .trailing {
