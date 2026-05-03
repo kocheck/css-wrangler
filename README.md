@@ -103,6 +103,57 @@ That's the whole point.
 
 ---
 
+## Figma Plugin Bridge
+
+Sync CSS edits between Figma and the live page in your browser.
+
+### Setup
+
+1. Build everything once:
+   ```bash
+   pnpm install
+   pnpm build           # Chrome extension → dist/
+   pnpm figma:build     # Figma plugin    → figma-plugin/dist/
+   ```
+2. Load the Chrome extension: `chrome://extensions` → Developer mode →
+   **Load unpacked** → pick `dist/`.
+3. Load the Figma plugin: in Figma desktop, **Plugins → Development →
+   Import plugin from manifest…** → pick `figma-plugin/manifest.json`.
+4. Run the bridge daemon in a terminal:
+   ```bash
+   pnpm bridge
+   # [bridge] listening on ws://localhost:9123
+   ```
+5. Open the Figma plugin (Plugins → Development → CSS Wrangler Bridge)
+   and the Chrome extension panel. Both pills should read `BRIDGE`.
+
+### Forward — Figma → Browser
+
+1. In Figma, select any frame with auto-layout, fills, or text.
+2. The plugin lists supported properties under **Ready to push**.
+3. Pick an element on a real page (e.g. github.com) using the Chrome
+   extension.
+4. In the Figma plugin, click **Push to browser →**. The styles apply
+   to the picked element.
+
+### Reverse — Browser → Figma
+
+1. Pick an element in the browser; edit any properties in the panel.
+2. In Figma, select the node you want to receive the changes.
+3. In the panel, click **Push to Figma**. The Figma node updates;
+   `Cmd-Z` in Figma undoes the change.
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `BRIDGE OFFLINE` in either UI | Run `pnpm bridge` in a terminal. |
+| `No element picked in browser` | Use the Chrome extension's pick tool first. |
+| `Bridge offline` flash on push | Daemon crashed or wasn't started; restart with `pnpm bridge`. |
+| Changes don't apply in Figma | Check that the node supports the property (e.g. only auto-layout frames have padding). |
+
+---
+
 ## Architecture
 
 Three runtime contexts, one message contract.

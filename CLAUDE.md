@@ -13,13 +13,14 @@ Spec lives at `.context/attachments/pasted_text_2026-05-02_05-42-23.txt`.
 That's the source of truth for what the extension is supposed to do. Read
 it before redesigning anything.
 
-## Three runtime contexts (architecture map)
+## Four runtime contexts (architecture map)
 
 | Context | File | Owns | Constraints |
 |---|---|---|---|
 | **Service worker** | `src/background/service-worker.ts` | Just opens the side panel on action click | MV3 ephemeral — dies after ~30s idle. **Never** put state here. |
 | **Content script** | `src/content/*` | DOM: picker overlay, injected `<style>`, `__wrangler-{id}` classes, MutationObserver, breakpoint wrapper | Stateful but ephemeral. Wiped on reload. Cannot import npm packages directly (crxjs bundles). |
 | **Side panel** | `src/panel/*` | Edit list, undo history, similar-element review UI, patch generation, clipboard | React + zustand. Tells the content script *what* to apply; never touches the page DOM directly. |
+| **Bridge daemon** | `bridge/src/cli.ts` | WebSocket relay between Figma plugin and panel | Localhost only. Dumb relay — no CSS state, no pairings. Reads `WRANGLER_BRIDGE_PORT` env var. |
 
 They communicate via `chrome.runtime` with a typed discriminated union in
 `src/shared/messages.ts`. **Always** add a new message type there (both
@@ -80,6 +81,18 @@ Violating any of these will silently break things. In rough priority order:
     has an `AUTO-GENERATED` header for a reason. `pnpm tokens:check`
     fails on drift.
 
+11. **The bridge daemon is a dumb relay. Never put CSS state in it.**
+    All target tracking and baseline values live in the plugin and the
+    panel. The bridge only routes typed messages; it never inspects
+    `target` or `changes`. Adding logic here would couple two contexts
+    that were deliberately decoupled.
+
+12. **Figma plugin imports from `src/shared/` use relative paths**
+    (`../../src/shared/…`). The plugin lives in its own workspace with
+    its own tsconfig and esbuild bundle; path aliases would require
+    syncing two build systems. Relative imports are the consciously
+    accepted ugliness.
+
 ## Code conventions
 
 - **TypeScript strict + `noUncheckedIndexedAccess`.** No `any`. No
@@ -123,6 +136,19 @@ After a code change, what to do in Chrome:
 
 The first time you load the extension: `chrome://extensions` → Developer
 mode on → **Load unpacked** → pick `dist/`.
+
+### Bridge / Figma plugin
+
+```bash
+pnpm bridge          # WS daemon on ws://localhost:9123
+pnpm figma:build     # Figma plugin → figma-plugin/dist/
+pnpm figma:watch     # rebuild on changes (still need to reload plugin in Figma desktop)
+pnpm figma:typecheck # type-only check for the plugin workspace
+pnpm bridge:typecheck
+```
+
+After plugin code changes: rebuild (`pnpm figma:build`) → in Figma
+desktop, **Plugins → Development → Show/hide plugin** and rerun.
 
 ## How to add common things
 
@@ -168,6 +194,14 @@ without a strong reason — the spec is `default | hover | focus` only.
 Add the key, add it to the `BreakpointKey` type. The injector already
 groups rules by breakpoint into `@media` queries. UI for switching
 breakpoints is Tier 3.
+
+### A new property to the Figma ↔ CSS round-trip
+
+1. Add the read in `figma-plugin/src/mapping.ts` (Figma → `PropertyChange`).
+2. Add the apply in `figma-plugin/src/apply.ts` (`PropertyChange` → Figma node).
+3. Property must already exist in `TIER_1_PROPERTIES`. If it doesn't,
+   add it there first (see "A new editable property" above).
+4. Manually verify the round-trip on a real Figma file + real page.
 
 ## What's intentionally deferred
 

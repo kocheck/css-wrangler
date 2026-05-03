@@ -4,6 +4,7 @@ import EditList from "./components/EditList";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import PickButton from "./components/PickButton";
+import { onMessage as onBridgeMessage, startBridgeClient } from "./lib/bridge-client";
 import { useEditStore } from "./store/editStore";
 import { onContentMessage, sendToContent } from "./store/messageBridge";
 
@@ -15,8 +16,13 @@ export default function App() {
   const undo = useEditStore((s) => s.undo);
   const contentReady = useEditStore((s) => s.contentReady);
   const url = useEditStore((s) => s.url);
+  const applyFromFigma = useEditStore((s) => s.applyFromFigma);
+  const setOtherSideTarget = useEditStore((s) => s.setOtherSideTarget);
 
-  // initial ping to detect whether the content script is reachable
+  useEffect(() => {
+    startBridgeClient();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const probe = async () => {
@@ -41,7 +47,6 @@ export default function App() {
     };
   }, [setSource, setContentReady]);
 
-  // listen for content → panel messages
   useEffect(() => {
     return onContentMessage((msg) => {
       if (msg.type === "element-picked") {
@@ -55,7 +60,6 @@ export default function App() {
     });
   }, [receiveElement, setSource, setContentReady]);
 
-  // global shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") void cancelPick();
@@ -67,6 +71,16 @@ export default function App() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [cancelPick, undo]);
+
+  useEffect(() => {
+    return onBridgeMessage((msg) => {
+      if (msg.type === "push-changes" && msg.from === "figma") {
+        void applyFromFigma(msg);
+      } else if (msg.type === "echo" && msg.from === "figma") {
+        setOtherSideTarget(msg.target);
+      }
+    });
+  }, [applyFromFigma, setOtherSideTarget]);
 
   return (
     <div className="app">

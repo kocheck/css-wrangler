@@ -1,4 +1,5 @@
 import { useEditStore } from "../store/editStore";
+import BridgeStatusPill from "./BridgeStatus";
 
 export default function Header() {
   const url = useEditStore((s) => s.url);
@@ -7,6 +8,8 @@ export default function Header() {
   const contentReady = useEditStore((s) => s.contentReady);
   const editsCount = useEditStore((s) => s.edits.length);
   const clearAll = useEditStore((s) => s.clearAll);
+  const otherSide = useEditStore((s) => s.otherSideTarget);
+  const bridgeNotice = useEditStore((s) => s.bridgeNotice);
 
   let status: "ready" | "picking" | "blocked" = "ready";
   let statusLabel = "READY";
@@ -39,6 +42,7 @@ export default function Header() {
       <span className="status-pill" data-status={status}>
         <span className="dot" /> {statusLabel}
       </span>
+      <BridgeStatusPill />
       <button
         type="button"
         className="clear-all"
@@ -47,6 +51,15 @@ export default function Header() {
       >
         Clear all
       </button>
+      {otherSide && (
+        <div className="other-side-row">
+          <span className="label">FIGMA</span>
+          <span className="other-target" title={otherSide.display}>
+            {otherSide.display}
+          </span>
+        </div>
+      )}
+      {bridgeNotice && <div className="bridge-notice">{bridgeNotice}</div>}
       <div className="url-row">
         <span className="label">SRC</span>
         <span className="url" title={url}>

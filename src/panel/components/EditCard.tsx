@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { tailwindHintFor } from "../lib/tailwind-hint";
 import { useEditStore } from "../store/editStore";
 import PropertyRow from "./PropertyRow";
+import PushToFigmaButton from "./PushToFigmaButton";
 
 interface Props {
   edit: Edit;
@@ -138,6 +139,7 @@ export default function EditCard({ edit, index, groupLabel, isSynced }: Props) {
               <DiffSummary changes={edit.changes.filter((c) => c.state === selectedState)} />
             )}
           </div>
+          <PushToFigmaButton editId={edit.id} />
         </>
       )}
     </article>
