@@ -1,8 +1,11 @@
+import type { PushChangesMsg } from "@shared/bridge-messages";
 import type { BreakpointKey, CssState, TierProperty } from "@shared/constants";
 import type { TagSiblingsResponse } from "@shared/messages";
 import { nanoid } from "@shared/nanoid";
 import type { Edit, ElementRef, PropertyChange, StylingSystem } from "@shared/types";
 import { create } from "zustand";
+import { send as sendBridge } from "../lib/bridge-client";
+import { buildPushFromEdit, targetRefForEdit } from "../lib/figma-mapping";
 import { sendToContent } from "./messageBridge";
 
 interface EditState {
@@ -25,6 +28,7 @@ interface EditState {
     selector: string;
     count: number;
   } | null;
+  otherSideTarget: { display: string; kind: "figma-node" } | null;
 }
 
 interface EditActions {
@@ -53,6 +57,9 @@ interface EditActions {
   toggleForceState(editId: string): Promise<void>;
   applyToSimilar(editId: string): Promise<void>;
   dismissSiblingPrompt(): void;
+  pushSelectedToFigma(): boolean;
+  applyFromFigma(msg: PushChangesMsg): Promise<void>;
+  setOtherSideTarget(target: { display: string; kind: "figma-node" } | null): void;
 }
 
 const changeKey = (s: CssState, b: BreakpointKey, p: TierProperty) => `${s}|${b}|${p}`;
@@ -76,6 +83,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   selectedStateByEdit: {},
   forceStateByEdit: {},
   pendingSibling: null,
+  otherSideTarget: null,
 
   setSource: (url, stylingSystem) => set({ url, stylingSystem }),
   setContentReady: (ready) => set({ contentReady: ready }),
@@ -349,4 +357,32 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
   },
 
   dismissSiblingPrompt: () => set({ pendingSibling: null }),
+
+  setOtherSideTarget: (target) => set({ otherSideTarget: target }),
+
+  pushSelectedToFigma: () => {
+    const id = get().selectedId;
+    if (!id) return false;
+    const edit = get().edits.find((e) => e.id === id);
+    if (!edit || edit.changes.length === 0) return false;
+    const msg = buildPushFromEdit(edit);
+    return sendBridge(msg);
+  },
+
+  applyFromFigma: async (msg) => {
+    const id = get().selectedId;
+    if (!id) return;
+    for (const change of msg.changes) {
+      await get().applyChange({
+        editId: id,
+        state: change.state,
+        breakpoint: change.breakpoint,
+        property: change.property,
+        value: change.to,
+      });
+    }
+    set({
+      otherSideTarget: { display: msg.target.display, kind: "figma-node" },
+    });
+  },
 }));
