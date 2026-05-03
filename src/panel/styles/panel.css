@@ -100,6 +100,49 @@
   }
 }
 
+.bridge-pill {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 1px var(--sp-3);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+}
+
+.bridge-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-quaternary);
+}
+
+.bridge-pill[data-status="connected"] {
+  color: var(--fg-primary);
+}
+.bridge-pill[data-status="connected"] .dot {
+  background: var(--accent-applied);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent-applied) 60%, transparent);
+}
+
+.bridge-pill[data-status="connecting"] .dot {
+  background: var(--fg-secondary);
+  animation: bridge-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes bridge-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .url-row {
   grid-column: 1 / -1;
   display: flex;

@@ -4,6 +4,7 @@ import EditList from "./components/EditList";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import PickButton from "./components/PickButton";
+import { startBridgeClient } from "./lib/bridge-client";
 import { useEditStore } from "./store/editStore";
 import { onContentMessage, sendToContent } from "./store/messageBridge";
 
@@ -15,6 +16,11 @@ export default function App() {
   const undo = useEditStore((s) => s.undo);
   const contentReady = useEditStore((s) => s.contentReady);
   const url = useEditStore((s) => s.url);
+
+  // start the bridge client on mount
+  useEffect(() => {
+    startBridgeClient();
+  }, []);
 
   // initial ping to detect whether the content script is reachable
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useEditStore } from "../store/editStore";
+import BridgeStatusPill from "./BridgeStatus";
 
 export default function Header() {
   const url = useEditStore((s) => s.url);
@@ -39,6 +40,7 @@ export default function Header() {
       <span className="status-pill" data-status={status}>
         <span className="dot" /> {statusLabel}
       </span>
+      <BridgeStatusPill />
       <button
         type="button"
         className="clear-all"
