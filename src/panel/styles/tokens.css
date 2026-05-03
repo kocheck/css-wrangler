@@ -36,6 +36,8 @@
   --type-label: 11px;
   --type-section: 10px;
   --type-display: 13px;
+  --type-headline-sm: 24px;
+  --type-headline-lg: 32px;
 
   /* TRACKING */
   --tracking-tight: -0.01em;

@@ -69,6 +69,8 @@ type:
   label: 11px
   section: 10px
   display: 13px
+  headline-sm: 24px
+  headline-lg: 32px
 
 tracking:
   tight: -0.01em
@@ -230,7 +232,7 @@ edit bodies, and inputs.
 - **UI (`Inter Tight`** falling back to system) — labels and help copy only.
 - **Display** — same as mono. The wordmark uses uppercase + 0.08em tracking.
 
-Type scale is small (9–13px). This is a tool, not a marketing page.
+Type scale for the panel is small (9–13px). This is a tool, not a marketing page. The landing page at `/` (separate package) extends the scale with `headline-sm` (24px) and `headline-lg` (32px) for hero typography only — those tokens are not used in the panel.
 
 ## Layout
 
