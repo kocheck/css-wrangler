@@ -4,6 +4,9 @@
   justify-content: space-between;
   padding: var(--sp-5) var(--sp-6);
   border-bottom: 1px solid var(--border-hairline);
+  background: var(--bg-page);
+  position: relative;
+  z-index: 60;
 }
 
 .wordmark {
