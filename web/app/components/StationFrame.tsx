@@ -23,7 +23,10 @@ export function StationFrame({ stationNumber, stationName, testsBox, children }:
           <h1 className={styles.heading}>{stationName}</h1>
         </div>
         <Link href="/lab" className={styles.returnLink}>
-          {"← /lab"}
+          <span className={styles.returnArrow} aria-hidden="true">
+            ←
+          </span>
+          BACK TO LAB
         </Link>
       </header>
 
@@ -35,6 +38,15 @@ export function StationFrame({ stationNumber, stationName, testsBox, children }:
       </section>
 
       <section className={styles.body}>{children}</section>
+
+      <footer className={styles.bottomBar}>
+        <Link href="/lab" className={styles.returnLink}>
+          <span className={styles.returnArrow} aria-hidden="true">
+            ←
+          </span>
+          BACK TO LAB
+        </Link>
+      </footer>
     </div>
   );
 }

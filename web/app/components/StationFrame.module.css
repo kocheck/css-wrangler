@@ -53,22 +53,36 @@
 }
 
 .returnLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-family: var(--font-mono);
-  font-size: var(--type-caption);
+  font-size: var(--type-label);
   letter-spacing: var(--tracking-caps);
-  color: var(--fg-tertiary);
+  color: var(--fg-secondary);
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
-  padding-bottom: var(--sp-2);
-  transition: color var(--motion-fast) var(--ease-instrument);
+  padding: var(--sp-3) var(--sp-5);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: color var(--motion-fast) var(--ease-instrument), border-color var(--motion-fast)
+    var(--ease-instrument), background-color var(--motion-fast) var(--ease-instrument);
 }
 
 .returnLink:hover,
 .returnLink:focus-visible {
   color: var(--fg-primary);
+  border-color: var(--border-strong);
+  background: var(--bg-elev-1);
   outline: none;
+}
+
+.returnArrow {
+  font-size: var(--type-data);
+  line-height: 1;
 }
 
 /* ── WHAT THIS TESTS band ───────────────────────────────────── */
@@ -111,6 +125,13 @@
   max-width: 960px;
   margin: 0 auto;
   padding: var(--sp-9) var(--sp-6);
+}
+
+.bottomBar {
+  border-top: 1px solid var(--border-hairline);
+  padding: var(--sp-6);
+  display: flex;
+  justify-content: flex-start;
 }
 
 @media (max-width: 720px) {
