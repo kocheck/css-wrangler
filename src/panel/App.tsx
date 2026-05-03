@@ -82,9 +82,7 @@ export default function App() {
       if (msg.type === "push-changes" && msg.from === "figma") {
         void applyFromFigma(msg);
       } else if (msg.type === "echo" && msg.from === "figma") {
-        setOtherSideTarget(
-          msg.target ? { display: msg.target.display, kind: "figma-node" } : null,
-        );
+        setOtherSideTarget(msg.target ? { display: msg.target.display, kind: "figma-node" } : null);
       }
     });
   }, [applyFromFigma, setOtherSideTarget]);

@@ -4,8 +4,8 @@ import type { Edit, PropertyChange } from "@shared/types";
 import { useMemo } from "react";
 import { tailwindHintFor } from "../lib/tailwind-hint";
 import { useEditStore } from "../store/editStore";
-import PushToFigmaButton from "./PushToFigmaButton";
 import PropertyRow from "./PropertyRow";
+import PushToFigmaButton from "./PushToFigmaButton";
 
 interface Props {
   edit: Edit;

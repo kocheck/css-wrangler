@@ -1,7 +1,7 @@
 import {
   BRIDGE_PROTOCOL_VERSION,
-  DEFAULT_BRIDGE_URL,
   type BridgeMessage,
+  DEFAULT_BRIDGE_URL,
   type HelloMsg,
 } from "@shared/bridge-messages";
 
