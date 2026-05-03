@@ -6,8 +6,13 @@ import styles from "./PatchExample.module.css";
 import { examplePatch } from "./patch-example-data";
 
 const highlightJson = cache(async (code: string): Promise<ReactNode> => {
-  const tree = await codeToHast(code, { lang: "json", theme: "vesper" });
-  return toJsxRuntime(tree, { Fragment, jsx, jsxs });
+  try {
+    const tree = await codeToHast(code, { lang: "json", theme: "vesper" });
+    return toJsxRuntime(tree, { Fragment, jsx, jsxs });
+  } catch (err) {
+    console.error("[PatchExample] Shiki highlight failed; falling back to plain code", err);
+    return <pre>{code}</pre>;
+  }
 });
 
 export async function PatchExample() {

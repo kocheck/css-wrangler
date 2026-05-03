@@ -116,8 +116,9 @@ if (check) {
     let current = "";
     try {
       current = readFileSync(out, "utf8");
-    } catch {
-      /* missing — treat as drift */
+    } catch (err) {
+      // Missing file → drift. Other I/O errors (EACCES, EISDIR) need to surface.
+      if (err.code !== "ENOENT") throw err;
     }
     if (current !== next) {
       const path = relative(ROOT, out);

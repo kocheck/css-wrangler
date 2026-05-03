@@ -24,7 +24,7 @@
   text-wrap: balance;
 }
 
-.headline span {
+.headline > span {
   display: block;
 }
 

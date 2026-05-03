@@ -8,7 +8,6 @@ export function InstallCTA() {
       <span className={styles.tooltipWrap}>
         <button
           type="button"
-          disabled
           aria-disabled="true"
           aria-describedby="install-cta-tooltip"
           className={`${styles.btnBase} ${styles.primary}`}

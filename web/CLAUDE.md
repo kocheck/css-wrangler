@@ -45,8 +45,10 @@ purpose disappears, the station can be removed.
 ## Non-obvious rules
 
 1. **Marketing-route components only consume tokens (`var(--…)`); no hex
-   literals allowed.** Verified by a grep step in `pnpm tokens:check` (or
-   in the marketing-route brief's definition of done). If you can't
+   literals allowed.** Convention-only today; verify at PR review time
+   with `grep -rE "#[0-9a-fA-F]{3,8}" web/app/components web/app/page.tsx`.
+   The lab's per-station CSS files (`plain.css`, `important-wars.css`,
+   etc.) are exempt — those ARE the styling under test. If you can't
    express a value with a token, add the token to `DESIGN.md` first.
 2. **Tailwind is scoped strictly to `app/lab/tailwind/**`.**
    `tailwind.config.ts`'s `content` glob points only there; the compiled

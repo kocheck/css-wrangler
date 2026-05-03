@@ -3,8 +3,8 @@ import { ExternalLink } from "./icons/ExternalLink";
 import { GitHub } from "./icons/GitHub";
 
 function getBuildHash(): string {
-  const sha = process.env.VERCEL_GIT_COMMIT_SHA;
-  if (!sha) return "local";
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+  if (!sha || sha.length < 7) return "local";
   return sha.slice(0, 7);
 }
 
