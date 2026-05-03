@@ -2,6 +2,6 @@
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "extends": ["../biome.json"],
   "files": {
-    "ignore": [".next", "node_modules", "next-env.d.ts"]
+    "ignore": [".next", "node_modules", "next-env.d.ts", "tsconfig.json"]
   }
 }
