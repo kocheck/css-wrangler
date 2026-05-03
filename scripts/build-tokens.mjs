@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * build-tokens.mjs
- * Generates src/panel/styles/tokens.css from the YAML frontmatter in DESIGN.md.
+ * Generates tokens.css to both src/panel/styles/ and web/app/styles/ from
+ * the YAML frontmatter in DESIGN.md.
  *
  * Mapping:
  *   colors.{name}        → --{name}
@@ -19,8 +20,9 @@
  * NOT codegen'd to CSS.
  *
  * Flags:
- *   --check   Regenerate to memory and diff against the existing tokens.css.
- *             Exit 1 on drift. Used by `pnpm tokens:check` in CI.
+ *   --check   Regenerate to memory and diff against the existing tokens.css
+ *             outputs. Exit 1 on drift in either. Used by `pnpm tokens:check`
+ *             in CI.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
