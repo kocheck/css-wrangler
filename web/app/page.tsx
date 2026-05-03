@@ -1,17 +1,22 @@
+import styles from "./Page.module.css";
+import { FeatureRow } from "./components/FeatureRow";
+import { Footer } from "./components/Footer";
+import { Hero } from "./components/Hero";
+import { InstallSection } from "./components/InstallSection";
+import { PatchExample } from "./components/PatchExample";
+import { TopBar } from "./components/TopBar";
+
 export default function HomePage() {
   return (
-    <main style={{ padding: "var(--sp-9)", fontFamily: "var(--font-mono)" }}>
-      <p
-        style={{
-          fontSize: "var(--type-display)",
-          letterSpacing: "var(--tracking-caps)",
-        }}
-      >
-        {"// CSS WRANGLER · placeholder"}
-      </p>
-      <p style={{ color: "var(--fg-tertiary)", marginTop: "var(--sp-4)" }}>
-        Marketing route — built in Phase 2 by frontend-design.
-      </p>
-    </main>
+    <>
+      <TopBar />
+      <main className={styles.main}>
+        <Hero />
+        <FeatureRow />
+        <PatchExample />
+        <InstallSection />
+      </main>
+      <Footer />
+    </>
   );
 }
