@@ -4,48 +4,55 @@ import type { Route } from "next";
 import Link from "next/link";
 import styles from "./lab-index.module.css";
 
-type Station = {
+type BuiltStation = {
   num: string;
   name: string;
   desc: string;
   href: Route;
+  pending?: false;
 };
 
-// Five of the eight station routes don't exist yet (Phase 4 work). Their hrefs
-// are cast to `Route` so the typed-routes check passes; visiting them in dev
-// will 404, which is expected per the Phase 3 brief.
+type PendingStation = {
+  num: string;
+  name: string;
+  desc: string;
+  pending: true;
+};
+
+type Station = BuiltStation | PendingStation;
+
 const STATIONS: Station[] = [
   { num: "·01", name: "PLAIN CSS", desc: "hand-written semantic classes", href: "/lab/plain" },
   {
     num: "·02",
     name: "TAILWIND UTILITIES",
     desc: "mass utility-class detection + hints",
-    href: "/lab/tailwind" as Route,
+    pending: true,
   },
   {
     num: "·03",
     name: "CSS MODULES",
     desc: "mangled `Name_class__hash` extraction",
-    href: "/lab/modules" as Route,
+    pending: true,
   },
   {
     num: "·04",
     name: "CSS-IN-JS",
     desc: "styled-components `sc-*` denylist",
-    href: "/lab/css-in-js" as Route,
+    pending: true,
   },
   { num: "·05", name: "INLINE STYLES", desc: "structural-selector fallback", href: "/lab/inline" },
   {
     num: "·06",
     name: "DEEP DOM",
     desc: "walker + observer + position:fixed",
-    href: "/lab/deep-dom" as Route,
+    pending: true,
   },
   {
     num: "·07",
     name: "SHARED-CLASS GRID",
     desc: "sibling-group detection",
-    href: "/lab/shared-grid" as Route,
+    pending: true,
   },
   {
     num: "·08",
@@ -78,15 +85,24 @@ export default function LabPage() {
         <hr className={styles.rule} />
 
         <ol className={styles.stations}>
-          {STATIONS.map((s) => (
-            <li key={s.num}>
-              <Link href={s.href} className={styles.row}>
+          {STATIONS.map((s) =>
+            s.pending ? (
+              <li key={s.num} className={styles.pendingRow} aria-disabled="true">
                 <span className={styles.num}>{s.num}</span>
                 <span className={styles.name}>{s.name}</span>
                 <span className={styles.desc}>{s.desc}</span>
-              </Link>
-            </li>
-          ))}
+                <span className={styles.pendingTag}>PENDING</span>
+              </li>
+            ) : (
+              <li key={s.num}>
+                <Link href={s.href} className={styles.row}>
+                  <span className={styles.num}>{s.num}</span>
+                  <span className={styles.name}>{s.name}</span>
+                  <span className={styles.desc}>{s.desc}</span>
+                </Link>
+              </li>
+            ),
+          )}
         </ol>
 
         <hr className={styles.rule} />
