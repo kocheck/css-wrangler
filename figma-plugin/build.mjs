@@ -1,7 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-// figma-plugin/build.mjs
 import { build, context } from "esbuild";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -19,19 +18,21 @@ const codeOpts = {
   define: { "process.env.NODE_ENV": '"production"' },
 };
 
+// Figma plugin iframes can't load external <script src="…">. Bundle UI to a
+// string so we can inline it into the HTML.
 const uiOpts = {
   entryPoints: [resolve(__dirname, "src/ui.tsx")],
-  outfile: resolve(outdir, "ui.js"),
   bundle: true,
   format: "iife",
   target: "es2017",
   platform: "browser",
   jsx: "automatic",
-  loader: { ".css": "text" },
+  write: false,
   define: { "process.env.NODE_ENV": '"production"' },
 };
 
-const HTML = `<!doctype html>
+function htmlWithInlineScript(jsSource) {
+  return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -42,13 +43,15 @@ const HTML = `<!doctype html>
   </head>
   <body>
     <div id="root"></div>
-    <script src="ui.js"></script>
+    <script>${jsSource}</script>
   </body>
 </html>`;
+}
 
 async function buildOnce() {
-  await Promise.all([build(codeOpts), build(uiOpts)]);
-  writeFileSync(resolve(outdir, "ui.html"), HTML);
+  const [, uiResult] = await Promise.all([build(codeOpts), build(uiOpts)]);
+  const uiJs = uiResult.outputFiles?.[0]?.text ?? "";
+  writeFileSync(resolve(outdir, "ui.html"), htmlWithInlineScript(uiJs));
   if (existsSync(resolve(__dirname, "manifest.json"))) {
     copyFileSync(resolve(__dirname, "manifest.json"), resolve(outdir, "manifest.json"));
   }
@@ -56,9 +59,26 @@ async function buildOnce() {
 }
 
 if (watch) {
-  const ctxs = await Promise.all([context(codeOpts), context(uiOpts)]);
-  await Promise.all(ctxs.map((c) => c.watch()));
-  writeFileSync(resolve(outdir, "ui.html"), HTML);
+  // Watch mode: rebuild and re-inline on every change.
+  const codeCtx = await context(codeOpts);
+  const uiCtx = await context({
+    ...uiOpts,
+    plugins: [
+      {
+        name: "inline-ui-into-html",
+        setup(b) {
+          b.onEnd((r) => {
+            const js = r.outputFiles?.[0]?.text ?? "";
+            writeFileSync(resolve(outdir, "ui.html"), htmlWithInlineScript(js));
+          });
+        },
+      },
+    ],
+  });
+  await Promise.all([codeCtx.watch(), uiCtx.watch()]);
+  if (existsSync(resolve(__dirname, "manifest.json"))) {
+    copyFileSync(resolve(__dirname, "manifest.json"), resolve(outdir, "manifest.json"));
+  }
   console.log("[figma-plugin] watching…");
 } else {
   await buildOnce();
