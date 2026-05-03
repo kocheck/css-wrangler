@@ -4,22 +4,12 @@ import type { Route } from "next";
 import Link from "next/link";
 import styles from "./lab-index.module.css";
 
-type BuiltStation = {
+type Station = {
   num: string;
   name: string;
   desc: string;
   href: Route;
-  pending?: false;
 };
-
-type PendingStation = {
-  num: string;
-  name: string;
-  desc: string;
-  pending: true;
-};
-
-type Station = BuiltStation | PendingStation;
 
 const STATIONS: Station[] = [
   { num: "·01", name: "PLAIN CSS", desc: "hand-written semantic classes", href: "/lab/plain" },
@@ -85,24 +75,15 @@ export default function LabPage() {
         <hr className={styles.rule} />
 
         <ol className={styles.stations}>
-          {STATIONS.map((s) =>
-            s.pending ? (
-              <li key={s.num} className={styles.pendingRow} aria-disabled="true">
+          {STATIONS.map((s) => (
+            <li key={s.num}>
+              <Link href={s.href} className={styles.row}>
                 <span className={styles.num}>{s.num}</span>
                 <span className={styles.name}>{s.name}</span>
                 <span className={styles.desc}>{s.desc}</span>
-                <span className={styles.pendingTag}>PENDING</span>
-              </li>
-            ) : (
-              <li key={s.num}>
-                <Link href={s.href} className={styles.row}>
-                  <span className={styles.num}>{s.num}</span>
-                  <span className={styles.name}>{s.name}</span>
-                  <span className={styles.desc}>{s.desc}</span>
-                </Link>
-              </li>
-            ),
-          )}
+              </Link>
+            </li>
+          ))}
         </ol>
 
         <hr className={styles.rule} />

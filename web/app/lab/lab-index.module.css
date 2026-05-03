@@ -68,33 +68,6 @@
   outline: none;
 }
 
-.pendingRow {
-  display: grid;
-  grid-template-columns: 36px 220px 1fr auto;
-  align-items: baseline;
-  gap: var(--sp-5);
-  padding: var(--sp-5) var(--sp-4);
-  cursor: default;
-}
-
-.pendingRow .num,
-.pendingRow .name,
-.pendingRow .desc {
-  color: var(--fg-quaternary);
-}
-
-.pendingTag {
-  font-family: var(--font-mono);
-  font-size: var(--type-micro);
-  letter-spacing: var(--tracking-caps);
-  color: var(--fg-quaternary);
-  text-transform: uppercase;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-  padding: var(--sp-1) var(--sp-3);
-  white-space: nowrap;
-}
-
 .num {
   font-family: var(--font-mono);
   font-size: var(--type-data);
@@ -135,13 +108,11 @@
 }
 
 @media (max-width: 600px) {
-  .row,
-  .pendingRow {
+  .row {
     grid-template-columns: 36px 1fr;
     grid-template-areas:
       "num name"
-      ". desc"
-      ". tag";
+      ". desc";
     row-gap: var(--sp-2);
   }
 
@@ -155,10 +126,5 @@
 
   .desc {
     grid-area: desc;
-  }
-
-  .pendingTag {
-    grid-area: tag;
-    justify-self: start;
   }
 }

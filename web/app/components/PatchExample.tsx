@@ -1,21 +1,18 @@
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, cache } from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
 import { codeToHast } from "shiki";
 import styles from "./PatchExample.module.css";
 import { examplePatch } from "./patch-example-data";
 
-async function highlight(code: string): Promise<ReactNode> {
-  const tree = await codeToHast(code, {
-    lang: "json",
-    theme: "vesper",
-  });
+const highlightJson = cache(async (code: string): Promise<ReactNode> => {
+  const tree = await codeToHast(code, { lang: "json", theme: "vesper" });
   return toJsxRuntime(tree, { Fragment, jsx, jsxs });
-}
+});
 
 export async function PatchExample() {
   const json = JSON.stringify(examplePatch, null, 2);
-  const highlighted = await highlight(json);
+  const highlighted = await highlightJson(json);
 
   return (
     <section className={styles.section}>

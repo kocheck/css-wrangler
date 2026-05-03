@@ -12,7 +12,7 @@ export function DeepDomTicker() {
     return () => clearInterval(interval);
   }, []);
 
-  const now = new Date(Date.now()).toISOString().slice(11, 19);
+  const now = new Date().toISOString().slice(11, 19);
   return (
     <span className="deep-fixed-header__ticker" suppressHydrationWarning>
       {`UTC ${now} · TICK ${String(tick).padStart(4, "0")}`}

@@ -10,6 +10,17 @@ type Props = {
   children: ReactNode;
 };
 
+function BackToLab() {
+  return (
+    <Link href="/lab" className={styles.returnLink}>
+      <span className={styles.returnArrow} aria-hidden="true">
+        ←
+      </span>
+      BACK TO LAB
+    </Link>
+  );
+}
+
 export function StationFrame({ stationNumber, stationName, testsBox, children }: Props) {
   return (
     <div className={styles.frame}>
@@ -22,12 +33,7 @@ export function StationFrame({ stationNumber, stationName, testsBox, children }:
           </p>
           <h1 className={styles.heading}>{stationName}</h1>
         </div>
-        <Link href="/lab" className={styles.returnLink}>
-          <span className={styles.returnArrow} aria-hidden="true">
-            ←
-          </span>
-          BACK TO LAB
-        </Link>
+        <BackToLab />
       </header>
 
       <section className={styles.tests} aria-labelledby="station-tests-label">
@@ -40,12 +46,7 @@ export function StationFrame({ stationNumber, stationName, testsBox, children }:
       <section className={styles.body}>{children}</section>
 
       <footer className={styles.bottomBar}>
-        <Link href="/lab" className={styles.returnLink}>
-          <span className={styles.returnArrow} aria-hidden="true">
-            ←
-          </span>
-          BACK TO LAB
-        </Link>
+        <BackToLab />
       </footer>
     </div>
   );
