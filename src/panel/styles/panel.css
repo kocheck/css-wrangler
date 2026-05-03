@@ -1209,3 +1209,54 @@
   content: "·  ";
   color: var(--fg-quaternary);
 }
+
+/* ── Push to Figma button ──────────────────────────────── */
+
+.push-to-figma {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  letter-spacing: var(--tracking-caps);
+  padding: 4px 10px;
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all var(--motion-fast) var(--ease-instrument);
+}
+.push-to-figma:hover:not(:disabled) {
+  color: var(--fg-primary);
+  border-color: var(--fg-primary);
+}
+.push-to-figma:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.push-to-figma[data-flash="sent"] {
+  border-color: var(--accent-applied);
+  color: var(--accent-applied);
+}
+
+/* ── Other side target row (Figma echo) ────────────────── */
+
+.other-side-row {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--type-caption);
+  color: var(--fg-secondary);
+  grid-column: 1 / -1;
+}
+.other-side-row .label {
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-size: var(--type-micro);
+}
+.other-side-row .other-target {
+  color: var(--fg-primary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex: 1;
+}

@@ -4,6 +4,7 @@ import type { Edit, PropertyChange } from "@shared/types";
 import { useMemo } from "react";
 import { tailwindHintFor } from "../lib/tailwind-hint";
 import { useEditStore } from "../store/editStore";
+import PushToFigmaButton from "./PushToFigmaButton";
 import PropertyRow from "./PropertyRow";
 
 interface Props {
@@ -110,6 +111,7 @@ export default function EditCard({ edit, index, groupLabel, isSynced }: Props) {
                 <span>FORCE</span>
               </button>
             )}
+            <PushToFigmaButton editId={edit.id} />
           </div>
           {selectedState !== "default" && (
             <div className="state-hint">
