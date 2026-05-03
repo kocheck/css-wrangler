@@ -36,6 +36,7 @@
   bottom: calc(100% + var(--sp-3));
   left: 0;
   width: max-content;
+  /* one-off tooltip width; not promoted to a token because no other component uses this size */
   max-width: 320px;
   padding: var(--sp-3) var(--sp-4);
   background: var(--bg-elev-2);
@@ -49,7 +50,7 @@
   color: var(--fg-secondary);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(2px);
+  transform: translateY(var(--sp-1));
   transition: opacity var(--motion-base) var(--ease-instrument), transform var(--motion-base)
     var(--ease-instrument);
 }
@@ -63,6 +64,7 @@
 .secondary {
   color: var(--fg-secondary);
   border: 1px solid var(--border-hairline);
+  gap: var(--sp-2);
 }
 
 .secondary:hover,

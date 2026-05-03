@@ -1,3 +1,4 @@
+// Reserved for future use; the TopBar wordmark is currently text-only per the brief.
 type IconProps = {
   width?: number;
   height?: number;

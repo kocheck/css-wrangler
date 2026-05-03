@@ -1,6 +1,9 @@
 .footer {
   border-top: 1px solid var(--border-hairline);
   padding: var(--sp-5) var(--sp-6) var(--sp-6);
+}
+
+.inner {
   max-width: 640px;
   margin: 0 auto;
 }
@@ -25,6 +28,12 @@
   border-bottom: 1px solid transparent;
   transition: color var(--motion-fast) var(--ease-instrument), border-color var(--motion-fast)
     var(--ease-instrument);
+}
+
+.githubLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
 }
 
 .left a:hover,

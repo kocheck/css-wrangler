@@ -1,3 +1,4 @@
+// Reserved for a future copy-to-clipboard control; not used in the marketing route v0.
 type IconProps = {
   width?: number;
   height?: number;

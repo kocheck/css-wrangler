@@ -1,4 +1,6 @@
 import styles from "./InstallCTA.module.css";
+import { ExternalLink } from "./icons/ExternalLink";
+import { GitHub } from "./icons/GitHub";
 
 export function InstallCTA() {
   return (
@@ -23,7 +25,9 @@ export function InstallCTA() {
         rel="noreferrer noopener"
         className={`${styles.btnBase} ${styles.secondary}`}
       >
-        {"▸ VIEW ON GITHUB"}
+        <GitHub width={12} height={12} />
+        {"VIEW ON GITHUB"}
+        <ExternalLink width={10} height={10} />
       </a>
     </div>
   );
