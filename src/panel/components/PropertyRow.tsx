@@ -34,6 +34,11 @@ const SCALE_PROPERTIES: ReadonlySet<TierProperty> = new Set([
   "font-size",
 ]);
 
+/** Stable DOM id for the property name span; used to wire `aria-labelledby` on the input(s). */
+function labelIdFor(editId: string, state: CssState, property: TierProperty): string {
+  return `prop-${editId}-${state}-${property}`;
+}
+
 function divergesFromScale(property: TierProperty, value: string): boolean {
   if (!value || !value.trim()) return false;
   if (!SCALE_PROPERTIES.has(property)) return false;
@@ -50,55 +55,24 @@ export default function PropertyRow({ edit, property, state }: Props) {
   const currentValue = change?.to ?? baseline;
   const edited = Boolean(change);
   const diverges = edited && divergesFromScale(property, currentValue);
+  const labelId = labelIdFor(edit.id, state, property);
 
   const commit = (v: string) =>
     apply({ editId: edit.id, state, breakpoint: "desktop", property, value: v });
 
-  if (isColorProperty(property)) {
-    return (
-      <ColorRow
-        property={property}
-        value={currentValue}
-        edited={edited}
-        diverges={diverges}
-        onCommit={commit}
-      />
-    );
-  }
+  const rowProps: RowProps = {
+    property,
+    value: currentValue,
+    edited,
+    diverges,
+    onCommit: commit,
+    labelId,
+  };
 
-  if (isEnumProperty(property)) {
-    return (
-      <EnumRow
-        property={property}
-        value={currentValue}
-        edited={edited}
-        diverges={diverges}
-        onCommit={commit}
-      />
-    );
-  }
-
-  if (isNumericProperty(property)) {
-    return (
-      <NumericRow
-        property={property}
-        value={currentValue}
-        edited={edited}
-        diverges={diverges}
-        onCommit={commit}
-      />
-    );
-  }
-
-  return (
-    <TextRow
-      property={property}
-      value={currentValue}
-      edited={edited}
-      diverges={diverges}
-      onCommit={commit}
-    />
-  );
+  if (isColorProperty(property)) return <ColorRow {...rowProps} />;
+  if (isEnumProperty(property)) return <EnumRow {...rowProps} />;
+  if (isNumericProperty(property)) return <NumericRow {...rowProps} />;
+  return <TextRow {...rowProps} />;
 }
 
 interface RowProps {
@@ -107,19 +81,22 @@ interface RowProps {
   edited: boolean;
   diverges: boolean;
   onCommit: (v: string) => void;
+  labelId: string;
 }
 
 function PropertyName({
   edited,
   diverges,
   property,
+  labelId,
 }: {
   edited: boolean;
   diverges: boolean;
   property: TierProperty;
+  labelId: string;
 }) {
   return (
-    <span className="property-name">
+    <span className="property-name" id={labelId}>
       <span className="edited-dot" aria-hidden="true" />
       {property}
       {diverges && (
@@ -136,7 +113,7 @@ function PropertyName({
   );
 }
 
-function NumericRow({ property, value, edited, diverges, onCommit }: RowProps) {
+function NumericRow({ property, value, edited, diverges, onCommit, labelId }: RowProps) {
   const parsed = useMemo(() => parseLength(value), [value]);
   const units = unitsFor(property);
   const [num, setNum] = useState(parsed.numeric);
@@ -155,12 +132,13 @@ function NumericRow({ property, value, edited, diverges, onCommit }: RowProps) {
 
   return (
     <div className="property-row" data-edited={edited} data-diverges={diverges}>
-      <PropertyName edited={edited} diverges={diverges} property={property} />
+      <PropertyName edited={edited} diverges={diverges} property={property} labelId={labelId} />
       <span className="value-cell">
         <input
           type="number"
           value={num}
           placeholder="—"
+          aria-labelledby={labelId}
           onChange={(e) => setNum(e.target.value)}
           onBlur={() => commit(num, unit)}
           onKeyDown={(e) => {
@@ -170,6 +148,7 @@ function NumericRow({ property, value, edited, diverges, onCommit }: RowProps) {
         <select
           className="unit"
           value={unit}
+          aria-label={`${property} unit`}
           onChange={(e) => {
             setUnit(e.target.value);
             commit(num, e.target.value);
@@ -186,7 +165,7 @@ function NumericRow({ property, value, edited, diverges, onCommit }: RowProps) {
   );
 }
 
-function ColorRow({ property, value, edited, diverges, onCommit }: RowProps) {
+function ColorRow({ property, value, edited, diverges, onCommit, labelId }: RowProps) {
   const hex = useMemo(() => rgbToHex(value), [value]);
   const [color, setColor] = useState(hex);
 
@@ -194,13 +173,18 @@ function ColorRow({ property, value, edited, diverges, onCommit }: RowProps) {
 
   return (
     <div className="property-row" data-edited={edited} data-diverges={diverges}>
-      <PropertyName edited={edited} diverges={diverges} property={property} />
+      <PropertyName edited={edited} diverges={diverges} property={property} labelId={labelId} />
       <span className="value-cell">
-        <span className="color-swatch" style={{ background: color || "transparent" }} />
+        <span
+          className="color-swatch"
+          style={{ background: color || "transparent" }}
+          aria-hidden="true"
+        />
         <input
           type="text"
           value={color}
           placeholder="#000000"
+          aria-labelledby={labelId}
           onChange={(e) => setColor(e.target.value)}
           onBlur={() => color && onCommit(color)}
           onKeyDown={(e) => {
@@ -223,15 +207,16 @@ function ColorRow({ property, value, edited, diverges, onCommit }: RowProps) {
   );
 }
 
-function EnumRow({ property, value, edited, diverges, onCommit }: RowProps) {
+function EnumRow({ property, value, edited, diverges, onCommit, labelId }: RowProps) {
   const options = ENUM_OPTIONS[property] ?? [];
   return (
     <div className="property-row" data-edited={edited} data-diverges={diverges}>
-      <PropertyName edited={edited} diverges={diverges} property={property} />
+      <PropertyName edited={edited} diverges={diverges} property={property} labelId={labelId} />
       <span className="value-cell">
         <select
           className="unit"
           value={value}
+          aria-labelledby={labelId}
           onChange={(e) => onCommit(e.target.value)}
           style={{ minWidth: 96, padding: "var(--sp-2) var(--sp-3)", borderLeft: "none" }}
         >
@@ -249,16 +234,17 @@ function EnumRow({ property, value, edited, diverges, onCommit }: RowProps) {
   );
 }
 
-function TextRow({ property, value, edited, diverges, onCommit }: RowProps) {
+function TextRow({ property, value, edited, diverges, onCommit, labelId }: RowProps) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   return (
     <div className="property-row" data-edited={edited} data-diverges={diverges}>
-      <PropertyName edited={edited} diverges={diverges} property={property} />
+      <PropertyName edited={edited} diverges={diverges} property={property} labelId={labelId} />
       <span className="value-cell">
         <input
           type="text"
           value={text}
+          aria-labelledby={labelId}
           onChange={(e) => setText(e.target.value)}
           onBlur={() => text && onCommit(text)}
           style={{ width: 96, textAlign: "left", padding: "var(--sp-2) var(--sp-3)" }}

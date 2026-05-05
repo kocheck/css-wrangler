@@ -67,7 +67,7 @@ export default function EditList() {
         <div className="edit-list-empty">
           <div className="schematic" aria-hidden="true" />
           <span>NO ELEMENTS</span>
-          <span style={{ color: "var(--fg-quaternary)" }}>PICK A NODE TO BEGIN</span>
+          <span style={{ color: "var(--fg-tertiary)" }}>PICK A NODE TO BEGIN</span>
         </div>
       </div>
     );

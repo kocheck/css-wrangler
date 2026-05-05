@@ -48,8 +48,13 @@ purpose disappears, the station can be removed.
    literals allowed.** Convention-only today; verify at PR review time
    with `grep -rE "#[0-9a-fA-F]{3,8}" web/app/components web/app/page.tsx`.
    The lab's per-station CSS files (`plain.css`, `important-wars.css`,
-   etc.) are exempt — those ARE the styling under test. If you can't
-   express a value with a token, add the token to `DESIGN.md` first.
+   etc.) are exempt — those ARE the styling under test. The
+   `/design-system` tuning console is also exempt: its `tokens.ts`
+   catalog mirrors `tokens.css` and uses literal hex values as the
+   _defaults_ that the playground shows reset state against. The
+   playground itself only consumes `var(--…)` — the literals are data,
+   not styling. If you can't express a value with a token, add the
+   token to `DESIGN.md` first.
 2. **Tailwind is scoped strictly to `app/lab/tailwind/**`.**
    `tailwind.config.ts`'s `content` glob points only there; the compiled
    stylesheet is imported only by `app/lab/tailwind/layout.tsx`. Utility

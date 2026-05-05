@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "DESIGN.md"
+      - "src/panel/styles/tokens.css"
+      - "web/app/styles/tokens.css"
+      - ".figma/**"
+      - "scripts/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/design-lint.yml"
@@ -27,3 +31,9 @@ jobs:
 
       - name: Lint DESIGN.md
         run: pnpm design:lint
+
+      - name: Verify tokens.css is in sync with DESIGN.md
+        run: pnpm tokens:check
+
+      - name: Verify Figma snapshot is in sync with DESIGN.md
+        run: pnpm tokens:check-figma

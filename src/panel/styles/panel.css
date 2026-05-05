@@ -544,7 +544,8 @@
   font-variant-numeric: tabular-nums;
 }
 .value-cell input::placeholder {
-  color: var(--fg-quaternary);
+  /* Placeholder must hit AA — fg-quaternary measures 1.77:1 on bg-page. */
+  color: var(--fg-tertiary);
 }
 
 .value-cell .unit {
@@ -1351,4 +1352,40 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── Focus-visible (keyboard a11y) ────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent-signal);
+  outline-offset: 1px;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline-offset: -1px;
+}
+
+/* .value-cell already shows :focus-within on its border — suppress the
+   inner ring to avoid double-rings. */
+.value-cell input:focus-visible,
+.value-cell select:focus-visible {
+  outline: none;
+}
+
+/* clear-all already has a 1px accent border — push the focus ring outside. */
+.clear-all:focus-visible {
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

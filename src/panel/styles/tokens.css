@@ -10,7 +10,7 @@
   /* COLORS */
   --fg-primary: #fafaf7;
   --fg-secondary: #a8a8a3;
-  --fg-tertiary: #6a6a66;
+  --fg-tertiary: #838380;
   --fg-quaternary: #3d3d3a;
   --bg-page: #0e0e10;
   --bg-elev-1: #131316;
@@ -83,7 +83,7 @@
   /* LIGHT OVERRIDES */
   --fg-primary: #0e0e10;
   --fg-secondary: #4a4a48;
-  --fg-tertiary: #8a8a86;
+  --fg-tertiary: #737370;
   --fg-quaternary: #c0c0bc;
   --bg-page: #fafaf7;
   --bg-elev-1: #f3f3ee;

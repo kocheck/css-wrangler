@@ -81,19 +81,23 @@ export default function EditCard({ edit, index, groupLabel, isSynced }: Props) {
       </div>
       {expanded && (
         <>
-          <div className="state-tabs">
+          <div className="state-tabs" aria-label="CSS state">
             {STATE_TABS.map((s) => (
               <button
                 key={s}
                 type="button"
                 className="state-tab"
                 data-active={selectedState === s}
+                aria-pressed={selectedState === s}
                 onClick={() => setSelectedState(edit.id, s)}
               >
-                <span className="tab-count" data-active={selectedState === s}>
+                <span className="tab-count" data-active={selectedState === s} aria-hidden="true">
                   {stateCounts[s]}
                 </span>
-                {s}
+                <span>
+                  {s}
+                  <span className="sr-only"> ({stateCounts[s]} edits)</span>
+                </span>
               </button>
             ))}
             <span className="state-tabs-spacer" />
