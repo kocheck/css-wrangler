@@ -34,6 +34,11 @@ const SCALE_PROPERTIES: ReadonlySet<TierProperty> = new Set([
   "font-size",
 ]);
 
+/** Stable DOM id for the property name span; used to wire `aria-labelledby` on the input(s). */
+function labelIdFor(editId: string, state: CssState, property: TierProperty): string {
+  return `prop-${editId}-${state}-${property}`;
+}
+
 function divergesFromScale(property: TierProperty, value: string): boolean {
   if (!value || !value.trim()) return false;
   if (!SCALE_PROPERTIES.has(property)) return false;
@@ -50,7 +55,7 @@ export default function PropertyRow({ edit, property, state }: Props) {
   const currentValue = change?.to ?? baseline;
   const edited = Boolean(change);
   const diverges = edited && divergesFromScale(property, currentValue);
-  const labelId = `prop-${edit.id}-${state}-${property}`;
+  const labelId = labelIdFor(edit.id, state, property);
 
   const commit = (v: string) =>
     apply({ editId: edit.id, state, breakpoint: "desktop", property, value: v });

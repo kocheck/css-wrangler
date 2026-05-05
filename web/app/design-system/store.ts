@@ -1,31 +1,44 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { TokenOverrides } from "./tokens";
+import { type TokenOverrides, isKnownTokenVar } from "./tokens";
 
 const STORAGE_KEY = "css-wrangler:tuning-overrides:v1";
+const LOG_PREFIX = "[css-wrangler] tuning overrides:";
 
 function readStorage(): TokenOverrides {
   if (typeof window === "undefined") return {};
+  let raw: string | null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as TokenOverrides;
-    }
-    return {};
-  } catch {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} localStorage read failed`, err);
     return {};
   }
+  if (!raw) return {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} stored value is not JSON; resetting`, err);
+    return {};
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  // Drop any keys that no longer correspond to tokens we know — prevents stale
+  // entries from a prior catalog version ghost-restoring deleted CSS vars.
+  const next: TokenOverrides = {};
+  for (const [k, v] of Object.entries(parsed)) {
+    if (typeof v === "string" && isKnownTokenVar(k)) next[k] = v;
+  }
+  return next;
 }
 
 function writeStorage(overrides: TokenOverrides): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-  } catch {
-    // localStorage full or disabled; silent — playground still works in-session.
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} localStorage write failed (likely quota or disabled)`, err);
   }
 }
 

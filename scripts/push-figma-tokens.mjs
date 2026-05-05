@@ -61,7 +61,8 @@ const stdout = args.includes("--stdout");
 const outputIdx = args.indexOf("--output");
 const outputPath = outputIdx >= 0 ? args[outputIdx + 1] : DEFAULT_OUTPUT;
 const stateIdx = args.indexOf("--state");
-const statePath = stateIdx >= 0 ? args[stateIdx + 1] : DEFAULT_STATE;
+const stateExplicit = stateIdx >= 0;
+const statePath = stateExplicit ? args[stateIdx + 1] : DEFAULT_STATE;
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. Load DESIGN.md and the current Figma state snapshot.
@@ -74,6 +75,15 @@ const fm = loadYaml(yaml);
 let state = null;
 if (existsSync(statePath)) {
   state = JSON.parse(readFileSync(statePath, "utf8"));
+} else if (stateExplicit) {
+  console.error(`✗ --state ${statePath} does not exist.`);
+  process.exit(1);
+} else {
+  console.warn(
+    `⚠ ${relative(ROOT, statePath)} is missing. The patch will assume Figma is empty ` +
+      `and emit createVariable() for every token — pasting that into a populated Figma file ` +
+      `will throw "variable already exists." Run the EXPORT_SNIPPET first to seed the snapshot.`,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -109,14 +119,18 @@ function descriptionFor(section, key, hasLight) {
   return `DESIGN.md · ${section}.${key}${lightNote}`;
 }
 
+const parseErrors = [];
+
 for (const { section, key, value } of iterateDesignTokens(fm)) {
   const figmaName = designKeyToFigmaName(section, key);
   if (!figmaName) continue;
   const parsed = parseDesignValue(section, key, value);
-  if (!parsed) continue;
+  if (!parsed) {
+    parseErrors.push(`${section}.${key} = ${JSON.stringify(value)}`);
+    continue;
+  }
 
   const isLightOnly = section === "colorsLight";
-  const isColor = section === "colors" || section === "colorsLight";
 
   const slot = ensure(figmaName, () => ({
     name: figmaName,
@@ -127,13 +141,19 @@ for (const { section, key, value } of iterateDesignTokens(fm)) {
       isLightOnly ? "colors" : section,
       key,
       // hasLight is true for fg/bg/border (which carry colorsLight overrides)
-      figmaName.startsWith("fg/") || figmaName.startsWith("bg/") || figmaName.startsWith("border/")
+      figmaName.startsWith("fg/") || figmaName.startsWith("bg/") || figmaName.startsWith("border/"),
     ),
     dark: null,
     light: null,
   }));
 
   if (isLightOnly) {
+    if (slot.dark === null) {
+      throw new Error(
+        `colorsLight.${key} appears without a matching colors.${key}. ` +
+          `Add the dark-mode value first, or remove the orphan from colorsLight.`,
+      );
+    }
     slot.light = parsed.value;
   } else {
     slot.dark = parsed.value;
@@ -142,6 +162,13 @@ for (const { section, key, value } of iterateDesignTokens(fm)) {
       slot.light = parsed.value;
     }
   }
+}
+
+if (parseErrors.length > 0) {
+  console.error(`✗ ${parseErrors.length} DESIGN.md value${parseErrors.length === 1 ? "" : "s"} could not be parsed:`);
+  for (const e of parseErrors) console.error(`  ${e}`);
+  console.error("  Fix the frontmatter and re-run. The patch was not generated.");
+  process.exit(1);
 }
 
 // Backfill any color whose colorsLight entry is missing — it should mirror
@@ -193,10 +220,12 @@ for (const slot of desired.values()) {
   const darkChanged = !eq(slot.dark, darkExisting);
   const lightChanged = slot.light != null && lightExisting != null && !eq(slot.light, lightExisting);
   const codeSyntaxChanged = existing.codeSyntax?.WEB !== `var(--${slot.cssVar})`;
-  const descriptionChanged = existing.description !== slot.description;
+  // Description is not part of the diff: designers may add notes to variables
+  // in Figma, and overwriting them on every push would silently destroy that work.
+  // Descriptions are still set on CREATE so new tokens land with a useful default.
 
-  if (darkChanged || lightChanged || codeSyntaxChanged || descriptionChanged) {
-    ops.updates.push({ slot, darkChanged, lightChanged, codeSyntaxChanged, descriptionChanged, existingId: existing.id });
+  if (darkChanged || lightChanged || codeSyntaxChanged) {
+    ops.updates.push({ slot, darkChanged, lightChanged, codeSyntaxChanged, existingId: existing.id });
   }
 }
 
@@ -261,7 +290,6 @@ function emit() {
     if (op.darkChanged)        lines.push(`  v.setValueForMode(dark.modeId, ${JSON.stringify(slot.dark)});`);
     if (op.lightChanged)       lines.push(`  v.setValueForMode(light.modeId, ${JSON.stringify(slot.light)});`);
     if (op.codeSyntaxChanged)  lines.push(`  v.setVariableCodeSyntax("WEB", ${JSON.stringify(`var(--${slot.cssVar})`)});`);
-    if (op.descriptionChanged) lines.push(`  v.description = ${JSON.stringify(slot.description)};`);
     lines.push(`  log.updated.push(${JSON.stringify(slot.name)});`);
     lines.push(`}`);
     lines.push("");

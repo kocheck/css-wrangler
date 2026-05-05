@@ -2,30 +2,47 @@
 // Editing here lets the playground show "what changed" deltas for export,
 // but the canonical source remains DESIGN.md → pnpm tokens.
 
-export type TokenKind = "color" | "length" | "ratio" | "duration" | "string";
-
-export interface TokenDef {
+interface TokenBase {
   name: string;
   cssVar: string;
   yamlPath: string;
-  kind: TokenKind;
-  group:
-    | "color-fg"
-    | "color-bg"
-    | "color-border"
-    | "color-accent"
-    | "type"
-    | "tracking"
-    | "leading"
-    | "spacing"
-    | "rounded"
-    | "motion"
-    | "ease";
-  default: string;
   description?: string;
 }
 
-export const TOKENS: TokenDef[] = [
+type ColorToken = TokenBase & {
+  kind: "color";
+  group: "color-fg" | "color-bg" | "color-border" | "color-accent";
+  default: `#${string}`;
+};
+
+type LengthToken = TokenBase & {
+  kind: "length";
+  group: "type" | "spacing" | "rounded";
+  default: `${number}px`;
+};
+
+type DurationToken = TokenBase & {
+  kind: "duration";
+  group: "motion";
+  default: `${number}ms`;
+};
+
+type RatioToken = TokenBase & {
+  kind: "ratio";
+  group: "leading";
+  default: string;
+};
+
+type StringToken = TokenBase & {
+  kind: "string";
+  group: "tracking" | "ease";
+  default: string;
+};
+
+export type TokenDef = ColorToken | LengthToken | DurationToken | RatioToken | StringToken;
+export type TokenKind = TokenDef["kind"];
+
+export const TOKENS = [
   // Foreground
   {
     name: "fg-primary",
@@ -413,10 +430,20 @@ export const TOKENS: TokenDef[] = [
     group: "ease",
     default: "cubic-bezier(0.2, 0, 0, 1)",
   },
-];
+] as const satisfies readonly TokenDef[];
 
+export type TokenCssVar = (typeof TOKENS)[number]["cssVar"];
+
+// `Record<string, …>` is intentional here — consumers iterate `Object.entries`
+// over user-edited overrides, which makes literal typing fight ergonomics.
+// Persistence-layer safety lives in `isKnownTokenVar` (used to drop stale
+// localStorage keys on hydration).
 export const TOKEN_BY_VAR: Record<string, TokenDef> = Object.fromEntries(
   TOKENS.map((t) => [t.cssVar, t]),
 );
+
+export function isKnownTokenVar(cssVar: string): cssVar is TokenCssVar {
+  return cssVar in TOKEN_BY_VAR;
+}
 
 export type TokenOverrides = Record<string, string>;

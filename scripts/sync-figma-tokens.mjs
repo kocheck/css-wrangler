@@ -8,7 +8,7 @@
  *
  * Workflow:
  *   1. Designer edits a token in Figma (e.g. accent/signal #ff3d00 → #ff5500).
- *   2. `pnpm tokens:sync` pulls the new value and rewrites DESIGN.md.
+ *   2. `pnpm tokens:pull` pulls the new value and rewrites DESIGN.md.
  *   3. `pnpm tokens` regenerates both tokens.css outputs.
  *   4. Commit DESIGN.md + both tokens.css together.
  *
@@ -27,7 +27,7 @@
  * Two ways to feed values in:
  *
  *   A) Figma REST API (Enterprise plan only):
- *        FIGMA_TOKEN=figd_xxx pnpm tokens:sync
+ *        FIGMA_TOKEN=figd_xxx pnpm tokens:pull
  *      Generate the PAT at https://www.figma.com/settings with
  *      `file_variables:read` scope.
  *
@@ -37,7 +37,7 @@
  *                 New Plugin → Run Plugin`, OR via an MCP tool that wraps
  *                 the Plugin API. The snippet returns a JSON blob.
  *        Step 2 — Save the JSON anywhere; e.g. `.context/figma-tokens.json`.
- *        Step 3 — Run: `pnpm tokens:sync --input .context/figma-tokens.json`
+ *        Step 3 — Run: `pnpm tokens:pull --input .context/figma-tokens.json`
  *
  * Optional:
  *   - FIGMA_FILE_KEY env var: defaults to the canonical Css Wrangler file.
@@ -52,13 +52,20 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  COLLECTION_NAME,
+  KEY_LINE_RE,
+  SECTION_HEADER_RE,
+  formatFloat,
+  mapVariable,
+  rgbToHex,
+} from "./lib/figma-token-map.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const DESIGN_MD = join(ROOT, "DESIGN.md");
 const FIGMA_FILE_KEY = process.env.FIGMA_FILE_KEY || "72WgrM79k7HUcFHYVFgpfC";
 const FIGMA_TOKEN = process.env.FIGMA_TOKEN;
-const COLLECTION_NAME = "CSS Wrangler / Tokens";
 
 const dryRun = process.argv.includes("--dry-run");
 const verbose = process.argv.includes("--verbose");
@@ -70,68 +77,6 @@ if (!FIGMA_TOKEN && !inputPath) {
   console.error("  Token: https://www.figma.com/settings → Personal access tokens (file_variables:read).");
   console.error("  Plugin-API export: see EXPORT_SNIPPET at the bottom of this script.");
   process.exit(1);
-}
-
-/**
- * Figma variable name (`fg/primary`, `sp/5`, …) → DESIGN.md location.
- * Returns `null` for variables we don't sync.
- */
-function mapVariable(name) {
-  const slash = name.indexOf("/");
-  if (slash === -1) return null;
-  const folder = name.slice(0, slash);
-  const leaf = name.slice(slash + 1);
-  switch (folder) {
-    case "fg":
-    case "bg":
-    case "border":
-      return { section: "colors", lightSection: "colorsLight", key: `${folder}-${leaf}` };
-    case "accent":
-      return { section: "colors", lightSection: null, key: `accent-${leaf}` };
-    case "sp":
-      return { section: "spacing", lightSection: null, key: leaf };
-    case "radius":
-      return { section: "rounded", lightSection: null, key: leaf };
-    case "type":
-      return { section: "type", lightSection: null, key: leaf };
-    case "tracking":
-      return { section: "tracking", lightSection: null, key: leaf };
-    case "leading":
-      return { section: "leading", lightSection: null, key: leaf };
-    default:
-      return null;
-  }
-}
-
-/** Figma `{r, g, b}` (0–1 floats) → `#rrggbb`. Alpha is ignored — DESIGN.md doesn't carry it. */
-function rgbToHex({ r, g, b }) {
-  const h = (n) => Math.round(n * 255).toString(16).padStart(2, "0");
-  return `#${h(r)}${h(g)}${h(b)}`;
-}
-
-/**
- * Format a Figma FLOAT value the way DESIGN.md spells it. Section-specific
- * because units differ (px vs em vs unitless ratio).
- */
-function formatFloat(section, raw) {
-  const n = Number(raw);
-  switch (section) {
-    case "spacing":
-      return n === 0 ? '"0"' : `${n}px`;
-    case "rounded":
-    case "type":
-      return `${n}px`;
-    case "tracking": {
-      // Figma stores PERCENT (e.g. -1, 0, 4, 8) → DESIGN.md uses em (-0.01em, 0, 0.04em, 0.08em).
-      if (n === 0) return "0";
-      const em = (n / 100).toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
-      return `${em}em`;
-    }
-    case "leading":
-      // Figma stores PERCENT (120, 140) → DESIGN.md uses ratio (1.2, 1.4).
-      return (n / 100).toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  }
-  return String(n);
 }
 
 async function fetchVariables() {
@@ -198,7 +143,11 @@ function buildDesiredValues(figmaResponse) {
     } else if (v.resolvedType === "FLOAT") {
       formatted = formatFloat(mapping.section, darkValue);
     } else {
-      continue; // STRING/BOOLEAN unsupported for now
+      console.warn(
+        `⚠ skipping ${v.name}: ${v.resolvedType} variables aren't synced ` +
+          `(only COLOR and FLOAT). Add support in scripts/lib/figma-token-map.mjs if needed.`,
+      );
+      continue;
     }
     desired.set(`${mapping.section}.${mapping.key}`, formatted);
 
@@ -211,15 +160,6 @@ function buildDesiredValues(figmaResponse) {
   }
   return desired;
 }
-
-// Top-level section header: `colors:` (optional whitespace, optional comment).
-// Comment requires leading whitespace before `#` so we don't mis-parse hex
-// values like `"#fafaf7"` as a comment.
-const SECTION_HEADER_RE = /^([a-zA-Z][a-zA-Z0-9_-]*):\s*(?:\s+#.*)?$/;
-// Indented `<key>: <value>` line. Key may be quoted ("0") or bare.
-// Value is captured greedily through end of line — YAML comments on token
-// lines are exceedingly rare in this file and not worth the parsing risk.
-const KEY_LINE_RE = /^(\s+)("?)([^":]+)\2:\s*(.+)$/;
 
 /**
  * Walk DESIGN.md line-by-line within frontmatter, replacing any value whose
@@ -327,7 +267,7 @@ main().catch((err) => {
  * variable collection in the same shape the REST API returns. Save the
  * console output as JSON, then run:
  *
- *   pnpm tokens:sync --input <path-to-saved-json>
+ *   pnpm tokens:pull --input <path-to-saved-json>
  *
  * ─── Snippet (copy from here through the end of the comment) ──────────────
  *

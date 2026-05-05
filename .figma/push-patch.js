@@ -21,13 +21,4 @@ const byName = new Map(all.map(v => [v.name, v]));
 
 const log = { created: [], updated: [], skipped: [] };
 
-// UPDATE fg/tertiary
-{
-  const v = byName.get("fg/tertiary");
-  if (!v) throw new Error('Snapshot drift: fg/tertiary not found in Figma');
-  v.setValueForMode(dark.modeId, {"r":0.5137254901960784,"g":0.5137254901960784,"b":0.5019607843137255});
-  v.setValueForMode(light.modeId, {"r":0.45098039215686275,"g":0.45098039215686275,"b":0.4392156862745098});
-  log.updated.push("fg/tertiary");
-}
-
 return log;
