@@ -1378,7 +1378,6 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Visually-hidden helper for live regions and screen-reader-only labels. */
 .sr-only {
   position: absolute;
   width: 1px;

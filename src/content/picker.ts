@@ -10,6 +10,7 @@ let active = false;
 let onPickCb: Listener | null = null;
 let onCancelCb: (() => void) | null = null;
 let currentTarget: Element | null = null;
+let lastHighlightRect: DOMRect | null = null;
 
 function ensurePickerStyles() {
   if (document.getElementById(PICKER_STYLE_ID)) return;
@@ -60,8 +61,8 @@ function ensureLiveRegion(): HTMLDivElement {
 }
 
 function announce(message: string) {
-  const live = document.getElementById(LIVE_REGION_ID);
-  if (live) live.textContent = message;
+  const live = ensureLiveRegion();
+  if (live.textContent !== message) live.textContent = message;
 }
 
 function highlight(el: Element | null) {
@@ -70,8 +71,20 @@ function highlight(el: Element | null) {
   if (!el) {
     hl?.remove();
     tip?.remove();
+    lastHighlightRect = null;
     return;
   }
+  const r = el.getBoundingClientRect();
+  if (
+    lastHighlightRect &&
+    r.top === lastHighlightRect.top &&
+    r.left === lastHighlightRect.left &&
+    r.width === lastHighlightRect.width &&
+    r.height === lastHighlightRect.height
+  ) {
+    return;
+  }
+  lastHighlightRect = r;
   if (!hl) {
     hl = document.createElement("div");
     hl.id = HIGHLIGHT_ID;
@@ -82,7 +95,6 @@ function highlight(el: Element | null) {
     tip.id = TOOLTIP_ID;
     document.documentElement.appendChild(tip);
   }
-  const r = el.getBoundingClientRect();
   hl.style.top = `${r.top}px`;
   hl.style.left = `${r.left}px`;
   hl.style.width = `${r.width}px`;
@@ -128,13 +140,13 @@ function describeTarget(el: Element): string {
 
 function onMove(e: MouseEvent) {
   const el = getOverlayTarget(e);
-  if (el !== currentTarget) {
-    currentTarget = el;
+  if (el === currentTarget) {
     highlight(el);
-    if (el) announce(`Hovered ${describeTarget(el)}`);
-  } else {
-    highlight(el);
+    return;
   }
+  currentTarget = el;
+  highlight(el);
+  if (el) announce(`Hovered ${describeTarget(el)}`);
 }
 
 function onClick(e: MouseEvent) {
@@ -204,15 +216,12 @@ export function startPick(onPick: Listener, onCancel: () => void): void {
   const overlay = document.createElement("div");
   overlay.id = OVERLAY_ID;
   overlay.setAttribute("role", "application");
-  overlay.setAttribute(
-    "aria-label",
-    "Element picker active. Move the mouse to highlight an element. Press Enter to select, Arrow Up to go to parent, Arrow Down to go to first child, Escape to cancel.",
-  );
+  overlay.setAttribute("aria-label", "Element picker");
   overlay.addEventListener("mousemove", onMove);
   overlay.addEventListener("click", onClick, { capture: true });
   document.documentElement.appendChild(overlay);
   document.addEventListener("keydown", onKey, true);
-  announce("Element picker active. Hover an element, press Enter to select, Escape to cancel.");
+  announce("Picker active. Enter selects, Up/Down walks the DOM, Escape cancels.");
 }
 
 export function stopPick(): void {
