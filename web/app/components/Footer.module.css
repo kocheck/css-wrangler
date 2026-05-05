@@ -47,7 +47,7 @@
   font-family: var(--font-mono);
   font-size: var(--type-caption);
   letter-spacing: var(--tracking-wide);
-  color: var(--fg-quaternary);
+  color: var(--fg-tertiary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -55,7 +55,7 @@
   font-family: var(--font-mono);
   font-size: var(--type-micro);
   letter-spacing: var(--tracking-wide);
-  color: var(--fg-quaternary);
+  color: var(--fg-tertiary);
   text-align: center;
   margin: 0;
   padding-top: var(--sp-3);

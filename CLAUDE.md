@@ -76,10 +76,16 @@ Violating any of these will silently break things. In rough priority order:
    change it.** It's how `Clear all`, `getStableClasses`, and the cleanup
    path identify our own DOM additions.
 
-10. **DESIGN.md frontmatter is the source of truth for design tokens.**
-    Edit the YAML, run `pnpm tokens`. Never hand-edit `tokens.css` — it
-    has an `AUTO-GENERATED` header for a reason. `pnpm tokens:check`
-    fails on drift.
+10. **DESIGN.md frontmatter is the canonical source of truth for design
+    tokens.** Code wins; Figma is an editable mirror reconciled at merge
+    time. Edit the YAML, run `pnpm tokens`, run `pnpm tokens:push`, paste
+    the resulting `.figma/push-patch.js` into Figma, refresh
+    `.figma/figma-state.json` via the EXPORT_SNIPPET, commit. Never
+    hand-edit `tokens.css` — it has an `AUTO-GENERATED` header for a
+    reason. CI gates two drift checks on every PR touching these files:
+    `pnpm tokens:check` (DESIGN.md ↔ tokens.css) and `pnpm
+    tokens:check-figma` (DESIGN.md ↔ Figma snapshot). The full workflow
+    is in `.claude/figma-sync.md`.
 
 11. **The bridge daemon is a dumb relay. Never put CSS state in it.**
     All target tracking and baseline values live in the plugin and the
@@ -121,8 +127,11 @@ Violating any of these will silently break things. In rough priority order:
 ```bash
 pnpm dev          # HMR for the panel; content + SW need manual reload
 pnpm build        # full production build → dist/
-pnpm tokens       # regenerate tokens.css from DESIGN.md frontmatter
-pnpm tokens:check # CI: fail on drift
+pnpm tokens             # regenerate tokens.css from DESIGN.md frontmatter
+pnpm tokens:check       # CI gate: fail if tokens.css drifts from DESIGN.md
+pnpm tokens:push        # generate .figma/push-patch.js (DESIGN.md → Figma)
+pnpm tokens:check-figma # CI gate: fail if Figma snapshot drifts from DESIGN.md
+pnpm tokens:pull        # optional: Figma → DESIGN.md (designer-first edits)
 pnpm typecheck
 pnpm lint
 ```
@@ -177,9 +186,22 @@ Test against a real page (github.com, tailwindcss.com, a CSS-in-JS app).
 
 ### A new design token
 
-Edit DESIGN.md frontmatter. Run `pnpm tokens`. Commit both files
-together. The mapping rules from YAML → CSS variables are documented in
-the frontmatter itself (as comments).
+Edit DESIGN.md frontmatter. Run `pnpm tokens`. Run `pnpm tokens:push`.
+**Default execution path: drive the Figma round-trip via the `use_figma`
+MCP — never stop at "paste this into Figma".** Run the contents of
+`.figma/push-patch.js` against `fileKey 72WgrM79k7HUcFHYVFgpfC`, then run
+the EXPORT_SNIPPET (bottom of `scripts/sync-figma-tokens.mjs`) and write
+the JSON return value into `.figma/figma-state.json`. Verify with `pnpm
+tokens:check-figma`. Commit DESIGN.md + both `tokens.css` outputs + both
+`.figma/` artifacts. CI gates `tokens:check` and `tokens:check-figma` on
+every PR. Manual paste is only a fallback when the Figma MCP is
+unreachable.
+
+The Figma↔DESIGN.md mapping rules and the full workflow (including the
+Figma-first `tokens:pull` reverse path) are documented in
+`.claude/figma-sync.md`. The mapping schema lives in code at
+`scripts/lib/figma-token-map.mjs` — that's the single source for the four
+sync scripts.
 
 ### A new state (Tier 2)
 

@@ -39,9 +39,13 @@ export default function Header() {
         <span className="brand-mark" aria-hidden="true" />
         <span>CSS Wrangler</span>
       </div>
-      <span className="status-pill" data-status={status}>
-        <span className="dot" /> {statusLabel}
-      </span>
+      <output
+        className="status-pill"
+        data-status={status}
+        aria-label={`Picker status: ${statusLabel.toLowerCase()}`}
+      >
+        <span className="dot" aria-hidden="true" /> {statusLabel}
+      </output>
       <BridgeStatusPill />
       <button
         type="button"

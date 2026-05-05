@@ -4,6 +4,7 @@ const OVERLAY_ID = "__wrangler-overlay";
 const HIGHLIGHT_ID = "__wrangler-highlight";
 const TOOLTIP_ID = "__wrangler-tooltip";
 const PICKER_STYLE_ID = "__wrangler-picker-style";
+const LIVE_REGION_ID = "__wrangler-live";
 
 let active = false;
 let onPickCb: Listener | null = null;
@@ -37,8 +38,30 @@ function ensurePickerStyles() {
   padding: 4px 6px; border: 1px solid #FF3D00;
   white-space: nowrap;
 }
+#${LIVE_REGION_ID} {
+  position: fixed; left: -9999px; top: auto; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+}
 `;
   document.head.appendChild(s);
+}
+
+function ensureLiveRegion(): HTMLDivElement {
+  let live = document.getElementById(LIVE_REGION_ID) as HTMLDivElement | null;
+  if (!live) {
+    live = document.createElement("div");
+    live.id = LIVE_REGION_ID;
+    live.setAttribute("role", "status");
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("aria-atomic", "true");
+    document.documentElement.appendChild(live);
+  }
+  return live;
+}
+
+function announce(message: string) {
+  const live = document.getElementById(LIVE_REGION_ID);
+  if (live) live.textContent = message;
 }
 
 function highlight(el: Element | null) {
@@ -91,10 +114,27 @@ function getOverlayTarget(e: MouseEvent): Element | null {
   return el;
 }
 
+function describeTarget(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  const id = el.id ? `#${el.id}` : "";
+  const cls = (el.getAttribute("class") ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((c) => `.${c}`)
+    .join("");
+  return `${tag}${id}${cls}`;
+}
+
 function onMove(e: MouseEvent) {
   const el = getOverlayTarget(e);
-  currentTarget = el;
-  highlight(el);
+  if (el !== currentTarget) {
+    currentTarget = el;
+    highlight(el);
+    if (el) announce(`Hovered ${describeTarget(el)}`);
+  } else {
+    highlight(el);
+  }
 }
 
 function onClick(e: MouseEvent) {
@@ -120,16 +160,19 @@ function onKey(e: KeyboardEvent) {
     e.preventDefault();
     currentTarget = currentTarget.parentElement;
     highlight(currentTarget);
+    announce(`Parent: ${describeTarget(currentTarget)}`);
   }
   if (e.key === "ArrowDown" && currentTarget?.firstElementChild) {
     e.preventDefault();
     currentTarget = currentTarget.firstElementChild;
     highlight(currentTarget);
+    announce(`Child: ${describeTarget(currentTarget)}`);
   }
 }
 
 function commit(el: Element) {
   const cb = onPickCb;
+  announce(`Selected ${describeTarget(el)}`);
   cleanup();
   cb?.(el);
 }
@@ -146,6 +189,8 @@ function cleanup() {
   document.getElementById(OVERLAY_ID)?.remove();
   highlight(null);
   document.removeEventListener("keydown", onKey, true);
+  /* Keep the live region attached so the final "Selected …" announcement
+     plays. It's reused on the next pick via ensureLiveRegion(). */
 }
 
 export function startPick(onPick: Listener, onCancel: () => void): void {
@@ -154,13 +199,20 @@ export function startPick(onPick: Listener, onCancel: () => void): void {
   onPickCb = onPick;
   onCancelCb = onCancel;
   ensurePickerStyles();
+  ensureLiveRegion();
 
   const overlay = document.createElement("div");
   overlay.id = OVERLAY_ID;
+  overlay.setAttribute("role", "application");
+  overlay.setAttribute(
+    "aria-label",
+    "Element picker active. Move the mouse to highlight an element. Press Enter to select, Arrow Up to go to parent, Arrow Down to go to first child, Escape to cancel.",
+  );
   overlay.addEventListener("mousemove", onMove);
   overlay.addEventListener("click", onClick, { capture: true });
   document.documentElement.appendChild(overlay);
   document.addEventListener("keydown", onKey, true);
+  announce("Element picker active. Hover an element, press Enter to select, Escape to cancel.");
 }
 
 export function stopPick(): void {
