@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Local-only PR gate. Runs typecheck + lint + tests + build before any push.
+# Bypass with `git push --no-verify` for emergencies.
+# This file is tracked in the repo; `pnpm prepare` wires it via core.hooksPath.
+
+set -e
+
+if [[ -n "$WRANGLER_SKIP_VERIFY" ]]; then
+  echo "[pre-push] WRANGLER_SKIP_VERIFY set — skipping verify"
+  exit 0
+fi
+
+echo "[pre-push] running pnpm verify..."
+exec pnpm verify

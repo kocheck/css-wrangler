@@ -33,7 +33,13 @@
     "web:build": "pnpm tokens && pnpm --dir web build",
     "web:typecheck": "pnpm --dir web typecheck",
     "web:lint": "pnpm --dir web lint",
-    "web:install": "pnpm --dir web install"
+    "web:install": "pnpm --dir web install",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project shared --project panel-lib --project cli-unit",
+    "test:integration": "vitest run --project cli-integration",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm cli:build && pnpm build",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -59,6 +65,7 @@
     "js-yaml": "^4.1.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4"
   }
 }

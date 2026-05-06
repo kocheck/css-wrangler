@@ -278,17 +278,64 @@ Don't reinvent these in v0:
   `cli/CONTRACT.md`.
 - **Out of scope (per spec):** pseudo-elements, transforms, animations,
   transitions, Shadow DOM, iframes, CSS custom properties, settings
-  panel, AI-suggest, automated tests.
+  panel, AI-suggest. (The spec also said automated tests were out of
+  scope; we have a narrow carve-out — see "Tests" above. UI component
+  tests and Figma-plugin tests remain out of scope.)
 
 If you're tempted to add any of these, check the spec first. Most are
 deliberate cuts.
 
+## Local verification
+
+`pnpm verify` is the canonical pre-PR check. It runs:
+
+```
+pnpm typecheck && pnpm lint && pnpm test && pnpm cli:build && pnpm build
+```
+
+Total time: ~30-45s.
+
+This command is enforced by a **pre-push git hook** at `.githooks/pre-push`,
+wired up via `core.hooksPath` (set on `pnpm install`'s `prepare` script).
+Push without it via `git push --no-verify` if you absolutely have to.
+
+Tests run **only** locally — no GitHub Actions test workflow exists. The
+existing CI (`.github/workflows/design-lint.yml`) only checks DESIGN.md /
+token drift on PRs.
+
+## Tests
+
+The original spec said automated tests were out of scope; this is a narrow
+intentional carve-out. Scope:
+
+- **Unit** (`src/__tests__/` and `cli/test/unit/`) — pure-function tests on
+  PatchBus, validate-port, parse-value, tailwind-hint, selectors, patch.ts,
+  patch-instructions, mcp-messages, inspect-envelope, disk-writer.
+- **Integration** (`cli/test/integration/`) — spawns `tsx cli/src/cli.ts`,
+  exercises the WS → bus → MCP stdio path end-to-end across all 5 tools, 2
+  resources, 1 prompt, plus the `watch` disk-write path.
+
+Not in scope: React component tests, panel `chrome.runtime` tests, Figma
+plugin tests, `web/` tests, coverage thresholds.
+
+Commands:
+
+```
+pnpm test               # unit + integration
+pnpm test:unit          # ~600ms
+pnpm test:integration   # ~10s (spawns daemons)
+pnpm test:watch         # vitest watch mode
+```
+
+To add tests: drop a `*.test.ts` file in the matching project tree. The
+root `vitest.config.ts` declares four projects: `shared`, `panel-lib`,
+`cli-unit`, `cli-integration`. Integration tests use the helpers in
+`cli/test/helpers/` (`spawnDaemon`, `McpStdioClient`).
+
 ## Verification before claiming done
 
-- `pnpm typecheck` clean
-- `pnpm lint` clean
+- `pnpm verify` clean (the canonical gate)
 - `pnpm tokens:check` clean (if you touched DESIGN.md or tokens.css)
-- `pnpm build` clean
 - **Manual end-to-end** on github.com (real-world DOM):
   1. Load `dist/` unpacked
   2. Pick an element

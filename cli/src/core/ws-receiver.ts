@@ -1,5 +1,5 @@
 import { WebSocketServer, type WebSocket } from "ws";
-import { MCP_PROTOCOL_VERSION } from "../../../src/shared/mcp-messages";
+import { inspectEnvelope } from "./inspect-envelope";
 import type { PatchBus } from "./patch-bus";
 
 export interface Receiver {
@@ -57,38 +57,6 @@ export function startReceiver(port: number, bus: PatchBus): Receiver {
   wss.on("error", (err) => log(`! server error: ${err.message}`));
 
   return { wss, isPanelConnected: () => clients.size > 0 };
-}
-
-type EnvelopeInspection =
-  | { kind: "patch-pushed"; patch: import("../../../src/shared/types").Patch }
-  | { kind: "invalid"; reason: string }
-  | { kind: "unknown"; type: string };
-
-function inspectEnvelope(value: unknown): EnvelopeInspection {
-  if (typeof value !== "object" || value === null) {
-    return { kind: "invalid", reason: "message is not an object" };
-  }
-  const m = value as { type?: unknown; version?: unknown; patch?: unknown };
-  if (typeof m.type !== "string") {
-    return { kind: "invalid", reason: "message has no type field" };
-  }
-  if (m.type !== "patch-pushed") return { kind: "unknown", type: m.type };
-  if (m.version !== MCP_PROTOCOL_VERSION) {
-    return {
-      kind: "invalid",
-      reason: `protocol version mismatch (got ${JSON.stringify(m.version)}, expected ${MCP_PROTOCOL_VERSION})`,
-    };
-  }
-  if (!isPatchShape(m.patch)) {
-    return { kind: "invalid", reason: "patch-pushed message has malformed patch field" };
-  }
-  return { kind: "patch-pushed", patch: m.patch };
-}
-
-function isPatchShape(value: unknown): value is import("../../../src/shared/types").Patch {
-  if (typeof value !== "object" || value === null) return false;
-  const p = value as { url?: unknown; capturedAt?: unknown; edits?: unknown };
-  return typeof p.url === "string" && typeof p.capturedAt === "string" && Array.isArray(p.edits);
 }
 
 function log(msg: string): void {

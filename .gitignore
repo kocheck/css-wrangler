@@ -8,6 +8,8 @@ figma-plugin/dist
 .env
 .env.local
 .superpowers/
+**/.vitest-cache/
+coverage/
 web/.next
 web/node_modules
 web/next-env.d.ts
