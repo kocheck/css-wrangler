@@ -1,19 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { PatchBus, RING_CAPACITY } from "../../src/core/patch-bus";
-import type { Patch } from "../../../src/shared/types";
-
-function makePatch(overrides: Partial<Patch> = {}): Patch {
-  return {
-    version: "1.0",
-    source: "css-wrangler",
-    url: "https://example.com",
-    capturedAt: "2026-05-06T18:00:00.000Z",
-    stylingSystem: "plain",
-    breakpoints: { mobile: 375, tablet: 768, desktop: 1280 },
-    edits: [],
-    ...overrides,
-  };
-}
+import { makePatch } from "../helpers/fixtures";
 
 describe("PatchBus", () => {
   describe("push + latest", () => {

@@ -2,41 +2,9 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import WebSocket from "ws";
-import type { Patch } from "../../../src/shared/types";
+import { PATCH_PUSHED_TYPE } from "../../../src/shared/mcp-messages";
 import { nextFreePort, spawnDaemon, type SpawnedDaemon } from "../helpers/daemon";
-
-function makePatch(overrides: Partial<Patch> = {}): Patch {
-  return {
-    version: "1.0",
-    source: "css-wrangler",
-    url: "https://example.com",
-    capturedAt: new Date().toISOString(),
-    stylingSystem: "plain",
-    breakpoints: { mobile: 375, tablet: 768, desktop: 1280 },
-    edits: [],
-    ...overrides,
-  };
-}
-
-async function pushPatch(port: number, patch: Patch): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const ws = new WebSocket(`ws://localhost:${port}`);
-    const t = setTimeout(() => reject(new Error("ws timeout")), 2000);
-    ws.on("open", () => {
-      ws.send(JSON.stringify({ type: "patch-pushed", version: "1.0", patch }));
-      setTimeout(() => {
-        ws.close();
-        clearTimeout(t);
-        resolve();
-      }, 100);
-    });
-    ws.on("error", (err) => {
-      clearTimeout(t);
-      reject(err);
-    });
-  });
-}
+import { makePatch, pushPatch, pushRaw } from "../helpers/fixtures";
 
 let dir: string;
 let path: string;
@@ -58,8 +26,7 @@ afterEach(async () => {
 
 describe("css-wrangler watch", () => {
   it("writes the latest patch to disk", async () => {
-    const patch = makePatch({ url: "first" });
-    await pushPatch(port, patch);
+    await pushPatch(port, makePatch({ url: "first" }));
     await daemon.awaitStderrMatch(/url=first/, 3000);
     const written = JSON.parse(await readFile(path, "utf8"));
     expect(written.url).toBe("first");
@@ -77,19 +44,8 @@ describe("css-wrangler watch", () => {
   it("ignores malformed messages and keeps the prior file", async () => {
     await pushPatch(port, makePatch({ url: "good" }));
     await daemon.awaitStderrMatch(/url=good/, 3000);
-    // Wrong version
-    await new Promise<void>((resolve) => {
-      const ws = new WebSocket(`ws://localhost:${port}`);
-      ws.on("open", () => {
-        ws.send(JSON.stringify({ type: "patch-pushed", version: "0.9", patch: makePatch() }));
-        setTimeout(() => {
-          ws.close();
-          resolve();
-        }, 80);
-      });
-    });
+    await pushRaw(port, { type: PATCH_PUSHED_TYPE, version: "0.9", patch: makePatch() });
     await daemon.awaitStderrMatch(/protocol version mismatch/, 2000);
-    // File still contains the good push.
     const written = JSON.parse(await readFile(path, "utf8"));
     expect(written.url).toBe("good");
   });

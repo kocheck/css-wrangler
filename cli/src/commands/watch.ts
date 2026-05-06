@@ -48,7 +48,8 @@ export async function runWatch(argv: string[]): Promise<void> {
   }
 
   const bus = new PatchBus();
-  const { wss } = startReceiver(flags.port, bus);
+  const { wss, listening } = startReceiver(flags.port, bus);
+  await listening;
   process.stderr.write(`[watch] listening for panel pushes on ws://localhost:${flags.port}\n`);
   process.stderr.write(`[watch] writing latest patch to ${flags.path}\n`);
 

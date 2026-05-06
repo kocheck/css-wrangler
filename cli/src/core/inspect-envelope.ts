@@ -1,8 +1,8 @@
-import { MCP_PROTOCOL_VERSION } from "../../../src/shared/mcp-messages";
+import { MCP_PROTOCOL_VERSION, PATCH_PUSHED_TYPE } from "../../../src/shared/mcp-messages";
 import type { Patch } from "../../../src/shared/types";
 
 export type EnvelopeInspection =
-  | { kind: "patch-pushed"; patch: Patch }
+  | { kind: typeof PATCH_PUSHED_TYPE; patch: Patch }
   | { kind: "invalid"; reason: string }
   | { kind: "unknown"; type: string };
 
@@ -14,7 +14,7 @@ export function inspectEnvelope(value: unknown): EnvelopeInspection {
   if (typeof m.type !== "string") {
     return { kind: "invalid", reason: "message has no type field" };
   }
-  if (m.type !== "patch-pushed") return { kind: "unknown", type: m.type };
+  if (m.type !== PATCH_PUSHED_TYPE) return { kind: "unknown", type: m.type };
   if (m.version !== MCP_PROTOCOL_VERSION) {
     return {
       kind: "invalid",
@@ -24,7 +24,7 @@ export function inspectEnvelope(value: unknown): EnvelopeInspection {
   if (!isPatchShape(m.patch)) {
     return { kind: "invalid", reason: "patch-pushed message has malformed patch field" };
   }
-  return { kind: "patch-pushed", patch: m.patch };
+  return { kind: PATCH_PUSHED_TYPE, patch: m.patch };
 }
 
 export function isPatchShape(value: unknown): value is Patch {

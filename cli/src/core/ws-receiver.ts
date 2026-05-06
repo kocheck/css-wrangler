@@ -1,10 +1,13 @@
 import { WebSocketServer, type WebSocket } from "ws";
+import { PATCH_PUSHED_TYPE } from "../../../src/shared/mcp-messages";
 import { inspectEnvelope } from "./inspect-envelope";
 import type { PatchBus } from "./patch-bus";
 
 export interface Receiver {
   wss: WebSocketServer;
   isPanelConnected: () => boolean;
+  /** Resolves when the underlying socket has finished binding the port. */
+  listening: Promise<void>;
 }
 
 /**
@@ -18,6 +21,10 @@ export interface Receiver {
 export function startReceiver(port: number, bus: PatchBus): Receiver {
   const wss = new WebSocketServer({ port, host: "127.0.0.1" });
   const clients = new Set<WebSocket>();
+  const listening = new Promise<void>((resolve, reject) => {
+    wss.once("listening", () => resolve());
+    wss.once("error", (err) => reject(err));
+  });
 
   wss.on("connection", (socket) => {
     clients.add(socket);
@@ -39,7 +46,7 @@ export function startReceiver(port: number, bus: PatchBus): Receiver {
         case "unknown":
           log(`! unknown message type: ${envelope.type}`);
           return;
-        case "patch-pushed":
+        case PATCH_PUSHED_TYPE:
           bus.push(envelope.patch);
           log(`> patch-pushed url=${envelope.patch.url} edits=${envelope.patch.edits.length}`);
           return;
@@ -56,7 +63,7 @@ export function startReceiver(port: number, bus: PatchBus): Receiver {
 
   wss.on("error", (err) => log(`! server error: ${err.message}`));
 
-  return { wss, isPanelConnected: () => clients.size > 0 };
+  return { wss, isPanelConnected: () => clients.size > 0, listening };
 }
 
 function log(msg: string): void {

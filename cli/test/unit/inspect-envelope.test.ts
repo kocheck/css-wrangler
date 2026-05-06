@@ -1,16 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { inspectEnvelope, isPatchShape } from "../../src/core/inspect-envelope";
-import type { Patch } from "../../../src/shared/types";
+import { makePatch } from "../helpers/fixtures";
 
-const validPatch: Patch = {
-  version: "1.0",
-  source: "css-wrangler",
-  url: "https://example.com",
-  capturedAt: "2026-05-06T18:00:00.000Z",
-  stylingSystem: "plain",
-  breakpoints: { mobile: 375, tablet: 768, desktop: 1280 },
-  edits: [],
-};
+const validPatch = makePatch();
 
 describe("inspectEnvelope", () => {
   it("accepts a well-formed patch-pushed envelope", () => {

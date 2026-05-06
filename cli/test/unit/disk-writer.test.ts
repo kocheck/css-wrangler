@@ -3,17 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { writePatchAtomic } from "../../src/core/disk-writer";
-import type { Patch } from "../../../src/shared/types";
+import { makePatch } from "../helpers/fixtures";
 
-const samplePatch: Patch = {
-  version: "1.0",
-  source: "css-wrangler",
-  url: "https://example.com",
-  capturedAt: "2026-05-06T18:00:00.000Z",
-  stylingSystem: "plain",
-  breakpoints: { mobile: 375, tablet: 768, desktop: 1280 },
-  edits: [],
-};
+const samplePatch = makePatch();
 
 let dir: string;
 

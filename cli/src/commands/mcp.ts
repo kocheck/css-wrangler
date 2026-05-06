@@ -15,7 +15,8 @@ export async function runMcp(): Promise<void> {
   }
 
   const bus = new PatchBus();
-  const { wss, isPanelConnected } = startReceiver(port, bus);
+  const { wss, isPanelConnected, listening } = startReceiver(port, bus);
+  await listening;
   process.stderr.write(`[mcp] listening for panel pushes on ws://localhost:${port}\n`);
 
   try {
