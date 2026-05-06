@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import PickButton from "./components/PickButton";
 import { onMessage as onBridgeMessage, startBridgeClient } from "./lib/bridge-client";
+import { startMcpClient } from "./lib/mcp-push";
 import { useEditStore } from "./store/editStore";
 import { onContentMessage, sendToContent } from "./store/messageBridge";
 
@@ -21,6 +22,7 @@ export default function App() {
 
   useEffect(() => {
     startBridgeClient();
+    startMcpClient();
   }, []);
 
   useEffect(() => {

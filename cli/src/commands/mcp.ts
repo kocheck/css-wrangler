@@ -1,0 +1,34 @@
+import { DEFAULT_MCP_PORT } from "../../../src/shared/mcp-messages";
+import { parsePort } from "../../../src/shared/validate-port";
+import { PatchBus } from "../core/patch-bus";
+import { installGracefulShutdown } from "../core/shutdown";
+import { startReceiver } from "../core/ws-receiver";
+import { startMcpServer } from "../mcp/server";
+
+export async function runMcp(): Promise<void> {
+  let port: number;
+  try {
+    port = parsePort(process.env.WRANGLER_MCP_PORT, DEFAULT_MCP_PORT);
+  } catch (err) {
+    process.stderr.write(`css-wrangler mcp: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.exit(1);
+  }
+
+  const bus = new PatchBus();
+  const { wss, isPanelConnected, listening } = startReceiver(port, bus);
+  await listening;
+  process.stderr.write(`[mcp] listening for panel pushes on ws://localhost:${port}\n`);
+
+  try {
+    await startMcpServer({ bus, isPanelConnected });
+  } catch (err) {
+    process.stderr.write(
+      `[mcp] failed to start MCP server: ${err instanceof Error ? err.message : String(err)}\n`,
+    );
+    wss.close();
+    throw err;
+  }
+  process.stderr.write(`[mcp] ready (stdio transport)\n`);
+
+  installGracefulShutdown("mcp", wss);
+}

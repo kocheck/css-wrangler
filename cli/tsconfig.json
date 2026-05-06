@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "src/**/*",
+    "../src/shared/types.ts",
+    "../src/shared/constants.ts",
+    "../src/shared/mcp-messages.ts",
+    "../src/shared/patch-instructions.ts",
+    "../src/shared/validate-port.ts"
+  ]
+}

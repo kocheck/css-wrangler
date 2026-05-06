@@ -85,6 +85,41 @@ That's the whole point.
 
 ---
 
+## MCP server — skip the clipboard
+
+There's a localhost MCP server that exposes the latest patch directly to Claude
+Code. No clipboard hop, no window switch. Click **Copy Patch** in the panel and
+ask Claude *"apply the latest CSS wrangler patch"* — Claude pulls it via the
+`get_latest_patch` tool and applies it under the same instructions as the
+markdown paste flow.
+
+```bash
+pnpm cli:build
+```
+
+Then add to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "css-wrangler": {
+      "command": "node",
+      "args": ["/absolute/path/to/css-wrangler/cli/dist/cli.js", "mcp"]
+    }
+  }
+}
+```
+
+The clipboard path still works — MCP is additive. Full surface (5 tools, 2
+resources, 1 prompt) and dev workflow are documented in
+[`cli/README.md`](./cli/README.md).
+
+For tools that don't speak MCP, `css-wrangler watch` writes the latest
+patch atomically to `~/.css-wrangler/latest.json`. The file-on-disk
+contract is documented in [`cli/CONTRACT.md`](./cli/CONTRACT.md).
+
+---
+
 ## Roadmap
 
 **Tier 2 — next**
@@ -98,8 +133,8 @@ That's the whole point.
 - Patch output emits `@media` rules grouped by breakpoint
 
 **Future**
-- CLI bridge (`css-wrangler watch`) that writes patches to
-  `~/.css-wrangler/latest.json` so Claude Code can read without paste
+- Auto-push on edit-list change so Claude Code stays in sync without a
+  click. Hook point is in `src/panel/components/Footer.tsx`.
 
 ---
 

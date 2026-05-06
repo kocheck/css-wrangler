@@ -1,11 +1,12 @@
 import { startServer } from "./server";
 import { DEFAULT_BRIDGE_PORT } from "../../src/shared/bridge-messages";
+import { parsePort } from "../../src/shared/validate-port";
 
-const portEnv = process.env.WRANGLER_BRIDGE_PORT;
-const PORT = portEnv ? Number(portEnv) : DEFAULT_BRIDGE_PORT;
-
-if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
-  console.error(`[bridge] invalid port: ${portEnv}`);
+let PORT: number;
+try {
+  PORT = parsePort(process.env.WRANGLER_BRIDGE_PORT, DEFAULT_BRIDGE_PORT);
+} catch (err) {
+  console.error(`[bridge] ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 }
 

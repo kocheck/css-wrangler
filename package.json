@@ -23,6 +23,9 @@
     "design:diff": "design.md diff",
     "bridge": "tsx bridge/src/cli.ts",
     "bridge:typecheck": "tsc -p bridge/tsconfig.json --noEmit",
+    "cli": "tsx cli/src/cli.ts",
+    "cli:typecheck": "tsc -p cli/tsconfig.json --noEmit",
+    "cli:build": "node cli/build.mjs",
     "figma:build": "pnpm -C figma-plugin build",
     "figma:watch": "pnpm -C figma-plugin watch",
     "figma:typecheck": "tsc -p figma-plugin/tsconfig.json --noEmit",
@@ -30,12 +33,20 @@
     "web:build": "pnpm tokens && pnpm --dir web build",
     "web:typecheck": "pnpm --dir web typecheck",
     "web:lint": "pnpm --dir web lint",
-    "web:install": "pnpm --dir web install"
+    "web:install": "pnpm --dir web install",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project shared --project panel-lib --project cli-unit",
+    "test:integration": "vitest run --project cli-integration",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm cli:build && pnpm build",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "ws": "^8.18.0",
+    "zod": "^3.25.76",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -54,6 +65,7 @@
     "js-yaml": "^4.1.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4"
   }
 }

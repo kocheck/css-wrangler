@@ -1,0 +1,11 @@
+{
+  "name": "@css-wrangler/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CSS Wrangler CLI — exposes the latest patch to Claude Code via MCP.",
+  "main": "src/cli.ts",
+  "bin": {
+    "css-wrangler": "dist/cli.js"
+  }
+}
