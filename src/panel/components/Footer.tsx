@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { copyToClipboard } from "../lib/clipboard";
+import { pushPatch } from "../lib/mcp-push";
 import { buildPatch, buildPatchMarkdown } from "../lib/patch";
 import { useEditStore } from "../store/editStore";
 
@@ -30,6 +31,12 @@ export default function Footer() {
     const json = JSON.stringify(patch, null, 2);
     const md = buildPatchMarkdown({ url, stylingSystem, edits });
     const ok = await copyToClipboard(md);
+    // Fire-and-forget MCP push. No-ops if the daemon isn't running — the
+    // clipboard write above is still the user's working path.
+    // TODO(202-509 v2): subscribe to editStore in mcp-push.ts and push on
+    // edit-list change (debounced) so Claude Code stays in sync without a
+    // click.
+    pushPatch(patch);
     if (ok) {
       const bytes = new TextEncoder().encode(json).length;
       setSnapshot({ json, bytes });

@@ -13,14 +13,16 @@ Spec lives at `.context/attachments/pasted_text_2026-05-02_05-42-23.txt`.
 That's the source of truth for what the extension is supposed to do. Read
 it before redesigning anything.
 
-## Four runtime contexts (architecture map)
+## Six runtime contexts (architecture map)
 
 | Context | File | Owns | Constraints |
 |---|---|---|---|
 | **Service worker** | `src/background/service-worker.ts` | Just opens the side panel on action click | MV3 ephemeral — dies after ~30s idle. **Never** put state here. |
 | **Content script** | `src/content/*` | DOM: picker overlay, injected `<style>`, `__wrangler-{id}` classes, MutationObserver, breakpoint wrapper | Stateful but ephemeral. Wiped on reload. Cannot import npm packages directly (crxjs bundles). |
-| **Side panel** | `src/panel/*` | Edit list, undo history, similar-element review UI, patch generation, clipboard | React + zustand. Tells the content script *what* to apply; never touches the page DOM directly. |
-| **Bridge daemon** | `bridge/src/cli.ts` | WebSocket relay between Figma plugin and panel | Localhost only. Dumb relay — no CSS state, no pairings. Reads `WRANGLER_BRIDGE_PORT` env var. |
+| **Side panel** | `src/panel/*` | Edit list, undo history, similar-element review UI, patch generation, clipboard, MCP push | React + zustand. Tells the content script *what* to apply; never touches the page DOM directly. |
+| **Bridge daemon** | `bridge/src/cli.ts` | WebSocket relay between Figma plugin and panel | Localhost only. Dumb relay — no CSS state, no pairings. Reads `WRANGLER_BRIDGE_PORT` env var. Default port `9123`. |
+| **MCP daemon** | `cli/src/commands/mcp.ts` | Holds in-memory patch queue. Receives panel pushes over WS, exposes them to Claude Code over stdio MCP. | Localhost only. Reads `WRANGLER_MCP_PORT` env var. Default port `9124` — **distinct from bridge's 9123**. Restart wipes the queue (matches invariant 1). |
+| **Watch daemon** | `cli/src/commands/watch.ts` | Writes the latest patch atomically to `~/.css-wrangler/latest.json` (or `--path`). Subscribes to the same `PatchBus`/WS receiver as `mcp`. | Localhost only. Same default port `9124` as `mcp` — they're alternatives. File-on-disk contract: `cli/CONTRACT.md`. |
 
 They communicate via `chrome.runtime` with a typed discriminated union in
 `src/shared/messages.ts`. **Always** add a new message type there (both
@@ -98,6 +100,29 @@ Violating any of these will silently break things. In rough priority order:
     its own tsconfig and esbuild bundle; path aliases would require
     syncing two build systems. Relative imports are the consciously
     accepted ugliness.
+
+13. **The "Instructions for Claude Code" rules live in exactly one
+    place: `src/shared/patch-instructions.ts`.** Both
+    `src/panel/lib/patch.ts` (markdown header) and
+    `cli/src/mcp/prompts/apply-css-changes.ts` (MCP prompt) import from
+    it. Never inline the rules in either consumer — they would drift,
+    and downstream Claude behaviour would silently diverge between the
+    paste path and the MCP path.
+
+14. **The MCP daemon is in-memory only.** Ring buffer at 50 in
+    `cli/src/core/patch-bus.ts`. No disk persistence. Restart wipes the
+    queue. For disk persistence, run `css-wrangler watch` instead — it
+    subscribes to the same `PatchBus` and atomically writes the latest
+    patch to `~/.css-wrangler/latest.json`. The two subcommands listen
+    on the same default port (`9124`); they're alternatives for v1.
+    File-on-disk contract is `cli/CONTRACT.md`.
+
+15. **MCP push is fire-and-forget.** `pushPatch()` in
+    `src/panel/lib/mcp-push.ts` returns a boolean; the panel never
+    awaits it and never surfaces failure. The clipboard write is the
+    user's working path — MCP is purely additive. Don't introduce a
+    UI signal that says "push failed" without thinking hard about why
+    you'd burn attention on it.
 
 ## Code conventions
 
@@ -225,6 +250,21 @@ breakpoints is Tier 3.
    add it there first (see "A new editable property" above).
 4. Manually verify the round-trip on a real Figma file + real page.
 
+### A new MCP tool / resource / prompt
+
+1. Tools → register in `cli/src/mcp/tools.ts` via
+   `server.registerTool(name, { title, description, inputSchema }, cb)`.
+   Use Zod schemas for `inputSchema`. Tool callbacks return
+   `{ content: [{ type: "text", text: ... }] }`.
+2. Resources → register in `cli/src/mcp/resources.ts`. Resource bodies
+   should be `application/json` mirrors of `PatchBus` queries.
+3. Prompts → add a file under `cli/src/mcp/prompts/` and register it in
+   `cli/src/mcp/server.ts`. **If the prompt references the
+   "Instructions for Claude Code" rules, source them from
+   `@shared/patch-instructions` — never inline.**
+4. New panel→CLI message types go in `src/shared/mcp-messages.ts`.
+   `cli/src/core/ws-receiver.ts` switches on `msg.type`; add a branch.
+
 ## What's intentionally deferred
 
 Don't reinvent these in v0:
@@ -233,9 +273,9 @@ Don't reinvent these in v0:
   (HIGH-confidence tier). Engineering ready; UI not built.
 - **Tier 3** — responsive breakpoints, viewport simulation, `@media` in
   the patch.
-- **Tier 4** — CLI bridge (`css-wrangler watch`). Patch format already
-  references the stable file location (`~/.css-wrangler/latest.json`)
-  so the CLI can be added without breaking the contract.
+- **Tier 4** — *shipped*. `css-wrangler mcp` (canonical Claude Code path)
+  and `css-wrangler watch` (file-on-disk fallback). Contract in
+  `cli/CONTRACT.md`.
 - **Out of scope (per spec):** pseudo-elements, transforms, animations,
   transitions, Shadow DOM, iframes, CSS custom properties, settings
   panel, AI-suggest, automated tests.
@@ -290,13 +330,34 @@ muscat/
 │   │   │   ├── patch.ts               # markdown-fenced JSON builder
 │   │   │   ├── tailwind-hint.ts       # value → utility mapping
 │   │   │   ├── parse-value.ts         # numeric/unit/color helpers
-│   │   │   └── clipboard.ts
+│   │   │   ├── clipboard.ts
+│   │   │   ├── bridge-client.ts       # WS → bridge daemon (Figma sync)
+│   │   │   └── mcp-push.ts            # WS → MCP daemon (Claude Code)
 │   │   └── styles/
 │   │       └── tokens.css             # AUTO-GENERATED from DESIGN.md
 │   └── shared/
 │       ├── types.ts                   # Edit, Patch, ElementRef, …
-│       ├── messages.ts                # discriminated union
+│       ├── messages.ts                # panel ↔ content discriminated union
+│       ├── bridge-messages.ts         # panel ↔ figma-plugin via bridge daemon
+│       ├── mcp-messages.ts            # panel → cli MCP daemon
+│       ├── patch-instructions.ts      # SOURCE OF TRUTH for the 7 numbered rules
 │       └── constants.ts               # TIER_1_PROPERTIES, BREAKPOINTS, …
+├── cli/                                # @css-wrangler/cli — `css-wrangler mcp` and `watch`
+│   ├── src/
+│   │   ├── cli.ts                     # entry + subcommand dispatch
+│   │   ├── commands/{mcp,watch}.ts
+│   │   ├── core/
+│   │   │   ├── patch-bus.ts           # in-memory ring buffer (shared by mcp + watch)
+│   │   │   ├── ws-receiver.ts         # extension push endpoint (shared)
+│   │   │   └── disk-writer.ts         # atomic write helper (used by watch)
+│   │   └── mcp/
+│   │       ├── server.ts              # stdio MCP server
+│   │       ├── tools.ts               # 5 tools
+│   │       ├── resources.ts           # 2 resource URIs
+│   │       └── prompts/apply-css-changes.ts
+│   ├── build.mjs                      # esbuild bundle → cli/dist/cli.js
+│   ├── CONTRACT.md                    # downstream-consumer contract
+│   └── README.md
 ├── scripts/
 │   ├── build-tokens.mjs               # DESIGN.md → tokens.css codegen
 │   └── tokens.css.template            # static bits (noise SVG, hairline)

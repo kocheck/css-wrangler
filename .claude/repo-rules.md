@@ -33,6 +33,10 @@ Only these files (and dotfiles) belong at the repo root.
 - `web/` — Next.js landing page (Vercel-hosted). Marketing route + `/lab`
   test-station bench. See `web/CLAUDE.md` for landing-page conventions.
   Independent `node_modules` and `pnpm-lock.yaml` (no workspaces).
+- `cli/` — `@css-wrangler/cli` workspace. `css-wrangler mcp` (MCP server
+  for Claude Code) and `css-wrangler watch` (file-on-disk fallback).
+  Shared `cli/src/core/` modules; subcommand entry points in
+  `cli/src/commands/`. See `cli/README.md` and `cli/CONTRACT.md`.
 
 ## Routing rules
 
