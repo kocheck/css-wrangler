@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { PatchBus } from "../core/patch-bus";
+import { PatchBus, RING_CAPACITY } from "../core/patch-bus";
+
+interface ToolDeps {
+  bus: PatchBus;
+  isPanelConnected: () => boolean;
+}
 
 function jsonResult(value: unknown): { content: { type: "text"; text: string }[] } {
   return {
@@ -13,7 +18,9 @@ function jsonResult(value: unknown): { content: { type: "text"; text: string }[]
   };
 }
 
-export function registerTools(server: McpServer, bus: PatchBus): void {
+export function registerTools(server: McpServer, deps: ToolDeps): void {
+  const { bus, isPanelConnected } = deps;
+
   server.registerTool(
     "get_latest_patch",
     {
@@ -31,16 +38,16 @@ export function registerTools(server: McpServer, bus: PatchBus): void {
     {
       title: "Get CSS Wrangler patch history",
       description:
-        "Returns recent patches newest-first, capped at `limit` (default 20). " +
-        "Read-only. The buffer is in-memory; restart wipes it.",
+        `Returns recent patches newest-first, capped at \`limit\` (default 20, ` +
+        `max ${RING_CAPACITY}). Read-only. The buffer is in-memory; restart wipes it.`,
       inputSchema: {
         limit: z
           .number()
           .int()
           .min(1)
-          .max(50)
+          .max(RING_CAPACITY)
           .optional()
-          .describe("Maximum number of patches to return (default 20, max 50)."),
+          .describe(`Maximum number of patches to return (default 20, max ${RING_CAPACITY}).`),
       },
     },
     async ({ limit }) => jsonResult(bus.list(limit ?? 20)),
@@ -53,7 +60,7 @@ export function registerTools(server: McpServer, bus: PatchBus): void {
       description:
         "Returns `{ count, oldestAt, newestAt, panelConnected, appliedCursor }`.",
     },
-    async () => jsonResult(bus.status()),
+    async () => jsonResult({ ...bus.status(), panelConnected: isPanelConnected() }),
   );
 
   server.registerTool(

@@ -19,8 +19,15 @@ export function startMcpClient(): void {
   let next: WebSocket;
   try {
     next = new WebSocket(DEFAULT_MCP_URL);
-  } catch {
-    scheduleReconnect();
+  } catch (err) {
+    // Sync throw means a malformed URL — a programming error, not a transient
+    // one. Log and stop; reconnecting won't fix a broken constant.
+    console.warn(
+      `[mcp-push] WebSocket constructor failed for ${DEFAULT_MCP_URL}: ${
+        err instanceof Error ? err.message : String(err)
+      }. MCP push disabled until reload.`,
+    );
+    setStatus("offline");
     return;
   }
   socket = next;

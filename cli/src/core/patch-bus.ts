@@ -6,23 +6,21 @@ export interface PatchBusStatus {
   count: number;
   oldestAt: string | null;
   newestAt: string | null;
-  panelConnected: boolean;
   appliedCursor: string | null;
 }
 
-type Listener = (patch: Patch) => void;
+type Listener = (patch: Patch) => void | Promise<void>;
 
 /**
  * In-memory ring buffer of patches pushed by the extension panel.
  *
  * Restart wipes the buffer (CLAUDE.md invariant 1 — session-only state).
- * Designed as a shared module: `css-wrangler watch` (Linear 202-501) will
- * subscribe to the same bus to write patches to disk.
+ * Shared across subcommands: `mcp` reads via tools/resources; `watch`
+ * subscribes to write the latest patch to disk.
  */
 export class PatchBus {
   private buffer: Patch[] = [];
   private appliedCursor: string | null = null;
-  private panelConnected = false;
   private readonly listeners = new Set<Listener>();
 
   push(patch: Patch): void {
@@ -31,24 +29,28 @@ export class PatchBus {
       this.buffer.shift();
     }
     for (const fn of this.listeners) {
+      let result: void | Promise<void>;
       try {
-        fn(patch);
-      } catch {
-        // listeners are advisory; don't let one consumer break the queue.
+        result = fn(patch);
+      } catch (err) {
+        logListenerError(err);
+        continue;
+      }
+      if (result && typeof (result as Promise<void>).catch === "function") {
+        (result as Promise<void>).catch(logListenerError);
       }
     }
   }
 
   /** Newest patch, or null. Idempotent — does not advance the cursor. */
   latest(): Patch | null {
-    return this.buffer.length === 0 ? null : (this.buffer.at(-1) ?? null);
+    return this.buffer.at(-1) ?? null;
   }
 
   /** Newest-first, capped at `limit`. Default 20. */
   list(limit = 20): Patch[] {
     if (limit <= 0) return [];
-    const slice = this.buffer.slice(-limit);
-    return slice.reverse();
+    return this.buffer.slice(-limit).reverse();
   }
 
   /**
@@ -76,10 +78,18 @@ export class PatchBus {
     return n;
   }
 
-  /** Patches strictly newer than the applied cursor, newest-first. */
+  /**
+   * Patches strictly newer than the applied cursor, newest-first.
+   *
+   * Relies on `Patch.capturedAt` being an ISO 8601 timestamp — those sort
+   * lexicographically the same as chronologically. Two patches in the same
+   * millisecond would compare equal and both be considered "applied" once
+   * either is marked.
+   */
   unapplied(): Patch[] {
     if (!this.appliedCursor) return [...this.buffer].reverse();
-    return this.buffer.filter((p) => p.capturedAt > (this.appliedCursor ?? "")).reverse();
+    const cursor = this.appliedCursor;
+    return this.buffer.filter((p) => p.capturedAt > cursor).reverse();
   }
 
   status(): PatchBusStatus {
@@ -89,13 +99,8 @@ export class PatchBus {
       count: this.buffer.length,
       oldestAt: oldest?.capturedAt ?? null,
       newestAt: newest?.capturedAt ?? null,
-      panelConnected: this.panelConnected,
       appliedCursor: this.appliedCursor,
     };
-  }
-
-  setPanelConnected(connected: boolean): void {
-    this.panelConnected = connected;
   }
 
   subscribe(fn: Listener): () => void {
@@ -104,4 +109,10 @@ export class PatchBus {
       this.listeners.delete(fn);
     };
   }
+}
+
+function logListenerError(err: unknown): void {
+  process.stderr.write(
+    `[patch-bus] listener error: ${err instanceof Error ? err.message : String(err)}\n`,
+  );
 }

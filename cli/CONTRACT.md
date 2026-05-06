@@ -127,10 +127,11 @@ The MCP server exposes the same `Patch` type via tools and resources. See
 [`README.md`](./README.md) for the surface and [`apply-css-changes`](./src/mcp/prompts/apply-css-changes.ts)
 for the prompt that wraps the standard application rules.
 
-The two paths are independent — running both `mcp` and `watch` requires
-they bind different ports (`--port`), and the panel currently pushes to a
-single port (`9124` by default), so for v1 they're alternatives. A future
-revision may add panel-side fan-out so both can listen.
+The two paths are independent. They listen on the same default port (`9124`),
+so for v1 they're alternatives — run one or the other. To run both at once,
+use `watch --port <other>` (only `watch` accepts `--port`; `mcp` is configured
+exclusively via `WRANGLER_MCP_PORT`); panel-side fan-out to multiple ports is
+not yet implemented.
 
 ## Source of truth for the application rules
 

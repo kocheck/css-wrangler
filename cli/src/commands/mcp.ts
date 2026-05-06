@@ -15,9 +15,18 @@ export async function runMcp(): Promise<void> {
   }
 
   const bus = new PatchBus();
-  const wss = startReceiver(port, bus);
+  const { wss, isPanelConnected } = startReceiver(port, bus);
   process.stderr.write(`[mcp] listening for panel pushes on ws://localhost:${port}\n`);
-  await startMcpServer(bus);
+
+  try {
+    await startMcpServer({ bus, isPanelConnected });
+  } catch (err) {
+    process.stderr.write(
+      `[mcp] failed to start MCP server: ${err instanceof Error ? err.message : String(err)}\n`,
+    );
+    wss.close();
+    throw err;
+  }
   process.stderr.write(`[mcp] ready (stdio transport)\n`);
 
   installGracefulShutdown("mcp", wss);

@@ -1,6 +1,11 @@
 import { WebSocketServer, type WebSocket } from "ws";
-import type { McpMessage } from "../../../src/shared/mcp-messages";
+import { MCP_PROTOCOL_VERSION } from "../../../src/shared/mcp-messages";
 import type { PatchBus } from "./patch-bus";
+
+export interface Receiver {
+  wss: WebSocketServer;
+  isPanelConnected: () => boolean;
+}
 
 /**
  * Localhost WebSocket endpoint that the extension panel pushes patches to.
@@ -10,50 +15,80 @@ import type { PatchBus } from "./patch-bus";
  * The MCP server reads from the bus over stdio; the WS server is one-way
  * panel→CLI. Logs go to stderr so they don't pollute the stdio MCP channel.
  */
-export function startReceiver(port: number, bus: PatchBus): WebSocketServer {
+export function startReceiver(port: number, bus: PatchBus): Receiver {
   const wss = new WebSocketServer({ port, host: "127.0.0.1" });
   const clients = new Set<WebSocket>();
 
   wss.on("connection", (socket) => {
     clients.add(socket);
-    bus.setPanelConnected(true);
     log(`+ panel connected (${clients.size} total)`);
 
     socket.on("message", (raw) => {
-      let msg: McpMessage;
+      let parsed: unknown;
       try {
-        msg = JSON.parse(raw.toString()) as McpMessage;
+        parsed = JSON.parse(raw.toString());
       } catch {
         log(`! invalid JSON from panel`);
         return;
       }
-      if (msg.type === "patch-pushed") {
-        bus.push(msg.patch);
-        log(`> patch-pushed url=${msg.patch.url} edits=${msg.patch.edits.length}`);
-        return;
+      const envelope = inspectEnvelope(parsed);
+      switch (envelope.kind) {
+        case "invalid":
+          log(`! ${envelope.reason}`);
+          return;
+        case "unknown":
+          log(`! unknown message type: ${envelope.type}`);
+          return;
+        case "patch-pushed":
+          bus.push(envelope.patch);
+          log(`> patch-pushed url=${envelope.patch.url} edits=${envelope.patch.edits.length}`);
+          return;
       }
-      log(`! unknown message type: ${describeUnknown(msg)}`);
     });
+
+    socket.on("error", (err) => log(`! socket error: ${err.message}`));
 
     socket.on("close", () => {
       clients.delete(socket);
-      if (clients.size === 0) bus.setPanelConnected(false);
       log(`- panel disconnected (${clients.size} total)`);
     });
   });
 
   wss.on("error", (err) => log(`! server error: ${err.message}`));
-  return wss;
+
+  return { wss, isPanelConnected: () => clients.size > 0 };
 }
 
-// `msg` narrows to `never` after the exhaustive switch above, so peek at the
-// raw object without re-parsing.
-function describeUnknown(msg: unknown): string {
-  if (typeof msg === "object" && msg !== null && "type" in msg) {
-    const type = (msg as { type: unknown }).type;
-    return typeof type === "string" ? type : "<no type>";
+type EnvelopeInspection =
+  | { kind: "patch-pushed"; patch: import("../../../src/shared/types").Patch }
+  | { kind: "invalid"; reason: string }
+  | { kind: "unknown"; type: string };
+
+function inspectEnvelope(value: unknown): EnvelopeInspection {
+  if (typeof value !== "object" || value === null) {
+    return { kind: "invalid", reason: "message is not an object" };
   }
-  return "<not an object>";
+  const m = value as { type?: unknown; version?: unknown; patch?: unknown };
+  if (typeof m.type !== "string") {
+    return { kind: "invalid", reason: "message has no type field" };
+  }
+  if (m.type !== "patch-pushed") return { kind: "unknown", type: m.type };
+  if (m.version !== MCP_PROTOCOL_VERSION) {
+    return {
+      kind: "invalid",
+      reason: `protocol version mismatch (got ${JSON.stringify(m.version)}, expected ${MCP_PROTOCOL_VERSION})`,
+    };
+  }
+  if (!isPatchShape(m.patch)) {
+    return { kind: "invalid", reason: "patch-pushed message has malformed patch field" };
+  }
+  return { kind: "patch-pushed", patch: m.patch };
+}
+
+function isPatchShape(value: unknown): value is import("../../../src/shared/types").Patch {
+  if (typeof value !== "object" || value === null) return false;
+  const p = value as { url?: unknown; capturedAt?: unknown; edits?: unknown };
+  return typeof p.url === "string" && typeof p.capturedAt === "string" && Array.isArray(p.edits);
 }
 
 function log(msg: string): void {

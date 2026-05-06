@@ -33,9 +33,8 @@ export default function Footer() {
     const ok = await copyToClipboard(md);
     // Fire-and-forget MCP push. No-ops if the daemon isn't running — the
     // clipboard write above is still the user's working path.
-    // TODO(202-509 v2): subscribe to editStore in mcp-push.ts and push on
-    // edit-list change (debounced) so Claude Code stays in sync without a
-    // click.
+    // TODO: auto-push from editStore (debounced) so Claude Code stays in
+    // sync without a manual click.
     pushPatch(patch);
     if (ok) {
       const bytes = new TextEncoder().encode(json).length;

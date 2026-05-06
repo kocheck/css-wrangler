@@ -77,16 +77,17 @@ cd cli && npm link
 
 ## State
 
-`mcp` keeps an in-memory ring buffer, capacity 50, **newest-first eviction**.
-Restart wipes everything (CLAUDE.md invariant 1). For persistence, run
-`css-wrangler watch` instead — it writes the latest patch atomically to
-disk and forgets earlier ones.
+`mcp` keeps an in-memory ring buffer, capacity 50. When full, the **oldest**
+patch is dropped to make room for the newest. Restart wipes everything (CLAUDE.md
+invariant 1). For persistence, run `css-wrangler watch` instead — it writes the
+latest patch atomically to disk and forgets earlier ones.
 
-`mcp` and `watch` listen on the same default port (`9124`). The panel pushes
-to a single port, so for v1 they're **alternatives** — run one or the other.
-If you need both running at once, give one a different port via `--port` and
-run the other on the default; the second one will silently get nothing
-until panel-side fan-out lands.
+`mcp` and `watch` listen on the same default port (`9124`). The panel pushes to
+a single port, so for v1 they're **alternatives** — run one or the other. If
+you need both running at once, run `watch --port <other>` and put `mcp` on the
+default; you'll need a panel-side change to push to both ports (not yet
+implemented). Note: `mcp` reads `WRANGLER_MCP_PORT` only — it has no `--port`
+flag. `watch` accepts both.
 
 ## Watch — file-on-disk path
 

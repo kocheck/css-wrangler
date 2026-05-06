@@ -5,13 +5,18 @@ import { registerApplyCssChangesPrompt } from "./prompts/apply-css-changes";
 import { registerResources } from "./resources";
 import { registerTools } from "./tools";
 
-export async function startMcpServer(bus: PatchBus): Promise<McpServer> {
+interface StartArgs {
+  bus: PatchBus;
+  isPanelConnected: () => boolean;
+}
+
+export async function startMcpServer({ bus, isPanelConnected }: StartArgs): Promise<McpServer> {
   const server = new McpServer({
     name: "css-wrangler",
     version: "0.1.0",
   });
 
-  registerTools(server, bus);
+  registerTools(server, { bus, isPanelConnected });
   registerResources(server, bus);
   registerApplyCssChangesPrompt(server);
 
