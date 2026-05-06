@@ -11,6 +11,7 @@
     "../src/shared/types.ts",
     "../src/shared/constants.ts",
     "../src/shared/mcp-messages.ts",
-    "../src/shared/patch-instructions.ts"
+    "../src/shared/patch-instructions.ts",
+    "../src/shared/validate-port.ts"
   ]
 }

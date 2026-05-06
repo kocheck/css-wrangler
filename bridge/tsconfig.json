@@ -6,5 +6,5 @@
     "module": "ESNext",
     "moduleResolution": "bundler"
   },
-  "include": ["src/**/*", "../src/shared/bridge-messages.ts", "../src/shared/types.ts", "../src/shared/constants.ts"]
+  "include": ["src/**/*", "../src/shared/bridge-messages.ts", "../src/shared/types.ts", "../src/shared/constants.ts", "../src/shared/validate-port.ts"]
 }

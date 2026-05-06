@@ -1,8 +1,10 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { DEFAULT_MCP_PORT } from "../../../src/shared/mcp-messages";
-import { PatchBus } from "../core/patch-bus";
+import { parsePort } from "../../../src/shared/validate-port";
 import { writePatchAtomic } from "../core/disk-writer";
+import { PatchBus } from "../core/patch-bus";
+import { installGracefulShutdown } from "../core/shutdown";
 import { startReceiver } from "../core/ws-receiver";
 
 const DEFAULT_PATH = join(homedir(), ".css-wrangler", "latest.json");
@@ -13,16 +15,14 @@ interface WatchFlags {
 }
 
 function parseFlags(argv: string[]): WatchFlags {
-  let port = process.env.WRANGLER_MCP_PORT
-    ? Number(process.env.WRANGLER_MCP_PORT)
-    : DEFAULT_MCP_PORT;
+  let portOverride: string | undefined;
   let path = DEFAULT_PATH;
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = argv[i + 1];
     if (flag === "--port") {
       if (!value) throw new Error("--port requires a value");
-      port = Number(value);
+      portOverride = value;
       i++;
     } else if (flag === "--path") {
       if (!value) throw new Error("--path requires a value");
@@ -32,9 +32,7 @@ function parseFlags(argv: string[]): WatchFlags {
       throw new Error(`unknown flag: ${flag}`);
     }
   }
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`invalid port: ${port}`);
-  }
+  const port = parsePort(portOverride ?? process.env.WRANGLER_MCP_PORT, DEFAULT_MCP_PORT);
   return { port, path };
 }
 
@@ -43,15 +41,15 @@ export async function runWatch(argv: string[]): Promise<void> {
   try {
     flags = parseFlags(argv);
   } catch (err) {
-    process.stderr.write(`css-wrangler watch: ${(err as Error).message}\n`);
+    process.stderr.write(
+      `css-wrangler watch: ${err instanceof Error ? err.message : String(err)}\n`,
+    );
     process.exit(1);
   }
 
   const bus = new PatchBus();
   const wss = startReceiver(flags.port, bus);
-  process.stderr.write(
-    `[watch] listening for panel pushes on ws://localhost:${flags.port}\n`,
-  );
+  process.stderr.write(`[watch] listening for panel pushes on ws://localhost:${flags.port}\n`);
   process.stderr.write(`[watch] writing latest patch to ${flags.path}\n`);
 
   bus.subscribe(async (patch) => {
@@ -61,17 +59,13 @@ export async function runWatch(argv: string[]): Promise<void> {
         `[watch] wrote ${flags.path} (url=${patch.url} edits=${patch.edits.length})\n`,
       );
     } catch (err) {
-      process.stderr.write(`[watch] write failed: ${(err as Error).message}\n`);
+      process.stderr.write(
+        `[watch] write failed: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
     }
   });
 
-  const shutdown = (signal: string): void => {
-    process.stderr.write(`\n[watch] received ${signal}, shutting down\n`);
-    wss.close(() => process.exit(0));
-  };
-  process.on("SIGINT", () => shutdown("SIGINT"));
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  installGracefulShutdown("watch", wss);
 
-  // Stay alive — wss.close() in shutdown handles the actual exit.
   await new Promise<void>(() => {});
 }

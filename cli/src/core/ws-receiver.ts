@@ -32,7 +32,7 @@ export function startReceiver(port: number, bus: PatchBus): WebSocketServer {
         log(`> patch-pushed url=${msg.patch.url} edits=${msg.patch.edits.length}`);
         return;
       }
-      log(`! unknown message type: ${(msg as { type: string }).type}`);
+      log(`! unknown message type: ${describeUnknown(msg)}`);
     });
 
     socket.on("close", () => {
@@ -44,6 +44,16 @@ export function startReceiver(port: number, bus: PatchBus): WebSocketServer {
 
   wss.on("error", (err) => log(`! server error: ${err.message}`));
   return wss;
+}
+
+// `msg` narrows to `never` after the exhaustive switch above, so peek at the
+// raw object without re-parsing.
+function describeUnknown(msg: unknown): string {
+  if (typeof msg === "object" && msg !== null && "type" in msg) {
+    const type = (msg as { type: unknown }).type;
+    return typeof type === "string" ? type : "<no type>";
+  }
+  return "<not an object>";
 }
 
 function log(msg: string): void {
