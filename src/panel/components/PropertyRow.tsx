@@ -126,7 +126,6 @@ function NumericRow({ property, value, edited, diverges, onCommit, labelId }: Ro
 
   const commit = (n: string, u: string) => {
     const next = buildLength(n, u);
-    if (!next) return;
     onCommit(next);
   };
 
