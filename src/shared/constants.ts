@@ -12,6 +12,11 @@ export const BREAKPOINTS = {
 
 export type BreakpointKey = keyof typeof BREAKPOINTS;
 
+export function mediaQueryFor(bp: BreakpointKey): string | null {
+  if (bp === "desktop") return null;
+  return `@media (max-width: ${BREAKPOINTS[bp]}px)`;
+}
+
 export type CssState = "default" | "hover" | "focus";
 
 export const TIER_1_PROPERTIES = [

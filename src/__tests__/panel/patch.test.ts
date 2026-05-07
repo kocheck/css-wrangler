@@ -106,6 +106,46 @@ describe("buildPatch", () => {
     expect(patch.breakpoints.tablet).toBeDefined();
     expect(patch.breakpoints.desktop).toBeDefined();
   });
+
+  it("emits mediaQuery: null for a desktop change", () => {
+    const edit = makeEdit();
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    expect(patch.edits[0]?.changes[0]?.mediaQuery).toBeNull();
+  });
+
+  it("emits @media (max-width: 768px) for a tablet change", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "tablet",
+          property: "padding-top",
+          from: "8px",
+          to: "12px",
+          tailwindHint: null,
+        },
+      ],
+    });
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    expect(patch.edits[0]?.changes[0]?.mediaQuery).toBe("@media (max-width: 768px)");
+  });
+
+  it("emits @media (max-width: 375px) for a mobile change", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "mobile",
+          property: "padding-top",
+          from: "8px",
+          to: "10px",
+          tailwindHint: null,
+        },
+      ],
+    });
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    expect(patch.edits[0]?.changes[0]?.mediaQuery).toBe("@media (max-width: 375px)");
+  });
 });
 
 describe("buildPatchMarkdown", () => {

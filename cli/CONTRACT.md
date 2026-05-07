@@ -51,11 +51,12 @@ Example:
       "changes": [
         {
           "state": "default",
-          "breakpoint": null,
+          "breakpoint": "desktop",
           "property": "padding",
           "from": "12px 24px",
           "to": "16px 32px",
-          "tailwindHint": "py-4 px-8"
+          "tailwindHint": "py-4 px-8",
+          "mediaQuery": null
         }
       ]
     }

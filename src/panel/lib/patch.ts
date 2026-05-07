@@ -1,4 +1,4 @@
-import { BREAKPOINTS } from "@shared/constants";
+import { BREAKPOINTS, mediaQueryFor } from "@shared/constants";
 import { renderInstructionsMarkdown } from "@shared/patch-instructions";
 import type { Edit, Patch, PatchEdit, StylingSystem } from "@shared/types";
 import { tailwindHintFor } from "./tailwind-hint";
@@ -25,6 +25,7 @@ export function buildPatch({ url, stylingSystem, edits }: BuildArgs): Patch {
       changes: e.changes.map((c) => ({
         ...c,
         tailwindHint: stylingSystem === "tailwind" ? tailwindHintFor(c.property, c.to) : null,
+        mediaQuery: mediaQueryFor(c.breakpoint),
       })),
     }));
 

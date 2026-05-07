@@ -29,6 +29,7 @@ export interface PropertyChange {
   from: string;
   to: string;
   tailwindHint?: string | null;
+  mediaQuery?: string | null;
 }
 
 export interface Edit {
