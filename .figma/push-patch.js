@@ -19,6 +19,754 @@ const allIds = coll.variableIds;
 const all = await Promise.all(allIds.map(id => figma.variables.getVariableByIdAsync(id)));
 const byName = new Map(all.map(v => [v.name, v]));
 
+function getOrThrow(name) {
+  const v = byName.get(name);
+  if (!v) throw new Error('Variable not found in collection (alias target may not have been created yet): ' + name);
+  return v;
+}
+
 const log = { created: [], updated: [], skipped: [] };
+
+// CREATE amber/1  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/1", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-1)");
+  v.description = "Radix Colors · amber.1";
+  v.setValueForMode(dark.modeId, {"r":0.08627450980392157,"g":0.07058823529411765,"b":0.047058823529411764});
+  v.setValueForMode(light.modeId, {"r":0.996078431372549,"g":0.9921568627450981,"b":0.984313725490196});
+  byName.set("amber/1", v);
+  log.created.push("amber/1");
+}
+
+// CREATE amber/10  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/10", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-10)");
+  v.description = "Radix Colors · amber.10";
+  v.setValueForMode(dark.modeId, {"r":1,"g":0.8392156862745098,"b":0.0392156862745098});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.7294117647058823,"b":0.09411764705882353});
+  byName.set("amber/10", v);
+  log.created.push("amber/10");
+}
+
+// CREATE amber/11  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/11", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-11)");
+  v.description = "Radix Colors · amber.11";
+  v.setValueForMode(dark.modeId, {"r":1,"g":0.792156862745098,"b":0.08627450980392157});
+  v.setValueForMode(light.modeId, {"r":0.6705882352941176,"g":0.39215686274509803,"b":0});
+  byName.set("amber/11", v);
+  log.created.push("amber/11");
+}
+
+// CREATE amber/12  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/12", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-12)");
+  v.description = "Radix Colors · amber.12";
+  v.setValueForMode(dark.modeId, {"r":1,"g":0.9058823529411765,"b":0.7019607843137254});
+  v.setValueForMode(light.modeId, {"r":0.30980392156862746,"g":0.20392156862745098,"b":0.13333333333333333});
+  byName.set("amber/12", v);
+  log.created.push("amber/12");
+}
+
+// CREATE amber/2  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/2", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-2)");
+  v.description = "Radix Colors · amber.2";
+  v.setValueForMode(dark.modeId, {"r":0.11372549019607843,"g":0.09411764705882353,"b":0.058823529411764705});
+  v.setValueForMode(light.modeId, {"r":0.996078431372549,"g":0.984313725490196,"b":0.9137254901960784});
+  byName.set("amber/2", v);
+  log.created.push("amber/2");
+}
+
+// CREATE amber/3  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/3", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-3)");
+  v.description = "Radix Colors · amber.3";
+  v.setValueForMode(dark.modeId, {"r":0.18823529411764706,"g":0.12549019607843137,"b":0.03137254901960784});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.9686274509803922,"b":0.7607843137254902});
+  byName.set("amber/3", v);
+  log.created.push("amber/3");
+}
+
+// CREATE amber/4  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/4", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-4)");
+  v.description = "Radix Colors · amber.4";
+  v.setValueForMode(dark.modeId, {"r":0.24705882352941178,"g":0.15294117647058825,"b":0});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.9333333333333333,"b":0.611764705882353});
+  byName.set("amber/4", v);
+  log.created.push("amber/4");
+}
+
+// CREATE amber/5  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/5", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-5)");
+  v.description = "Radix Colors · amber.5";
+  v.setValueForMode(dark.modeId, {"r":0.30196078431372547,"g":0.18823529411764706,"b":0});
+  v.setValueForMode(light.modeId, {"r":0.984313725490196,"g":0.8980392156862745,"b":0.4666666666666667});
+  byName.set("amber/5", v);
+  log.created.push("amber/5");
+}
+
+// CREATE amber/6  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/6", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-6)");
+  v.description = "Radix Colors · amber.6";
+  v.setValueForMode(dark.modeId, {"r":0.3607843137254902,"g":0.23921568627450981,"b":0.0196078431372549});
+  v.setValueForMode(light.modeId, {"r":0.9529411764705882,"g":0.8392156862745098,"b":0.45098039215686275});
+  byName.set("amber/6", v);
+  log.created.push("amber/6");
+}
+
+// CREATE amber/7  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/7", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-7)");
+  v.description = "Radix Colors · amber.7";
+  v.setValueForMode(dark.modeId, {"r":0.44313725490196076,"g":0.30980392156862746,"b":0.09803921568627451});
+  v.setValueForMode(light.modeId, {"r":0.9137254901960784,"g":0.7568627450980392,"b":0.3843137254901961});
+  byName.set("amber/7", v);
+  log.created.push("amber/7");
+}
+
+// CREATE amber/8  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/8", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-8)");
+  v.description = "Radix Colors · amber.8";
+  v.setValueForMode(dark.modeId, {"r":0.5607843137254902,"g":0.39215686274509803,"b":0.1411764705882353});
+  v.setValueForMode(light.modeId, {"r":0.8862745098039215,"g":0.6392156862745098,"b":0.21176470588235294});
+  byName.set("amber/8", v);
+  log.created.push("amber/8");
+}
+
+// CREATE amber/9  (scale-step)
+{
+  const v = figma.variables.createVariable("amber/9", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--amber-9)");
+  v.description = "Radix Colors · amber.9";
+  v.setValueForMode(dark.modeId, {"r":1,"g":0.7725490196078432,"b":0.23921568627450981});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.7725490196078432,"b":0.23921568627450981});
+  byName.set("amber/9", v);
+  log.created.push("amber/9");
+}
+
+// CREATE grass/1  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/1", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-1)");
+  v.description = "Radix Colors · grass.1";
+  v.setValueForMode(dark.modeId, {"r":0.054901960784313725,"g":0.08235294117647059,"b":0.06666666666666667});
+  v.setValueForMode(light.modeId, {"r":0.984313725490196,"g":0.996078431372549,"b":0.984313725490196});
+  byName.set("grass/1", v);
+  log.created.push("grass/1");
+}
+
+// CREATE grass/10  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/10", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-10)");
+  v.description = "Radix Colors · grass.10";
+  v.setValueForMode(dark.modeId, {"r":0.3254901960784314,"g":0.7019607843137254,"b":0.396078431372549});
+  v.setValueForMode(light.modeId, {"r":0.24313725490196078,"g":0.6078431372549019,"b":0.30980392156862746});
+  byName.set("grass/10", v);
+  log.created.push("grass/10");
+}
+
+// CREATE grass/11  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/11", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-11)");
+  v.description = "Radix Colors · grass.11";
+  v.setValueForMode(dark.modeId, {"r":0.44313725490196076,"g":0.8156862745098039,"b":0.5137254901960784});
+  v.setValueForMode(light.modeId, {"r":0.16470588235294117,"g":0.49411764705882355,"b":0.23137254901960785});
+  byName.set("grass/11", v);
+  log.created.push("grass/11");
+}
+
+// CREATE grass/12  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/12", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-12)");
+  v.description = "Radix Colors · grass.12";
+  v.setValueForMode(dark.modeId, {"r":0.7607843137254902,"g":0.9411764705882353,"b":0.7607843137254902});
+  v.setValueForMode(light.modeId, {"r":0.12549019607843137,"g":0.23529411764705882,"b":0.1450980392156863});
+  byName.set("grass/12", v);
+  log.created.push("grass/12");
+}
+
+// CREATE grass/2  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/2", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-2)");
+  v.description = "Radix Colors · grass.2";
+  v.setValueForMode(dark.modeId, {"r":0.0784313725490196,"g":0.10196078431372549,"b":0.08235294117647059});
+  v.setValueForMode(light.modeId, {"r":0.9607843137254902,"g":0.984313725490196,"b":0.9607843137254902});
+  byName.set("grass/2", v);
+  log.created.push("grass/2");
+}
+
+// CREATE grass/3  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/3", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-3)");
+  v.description = "Radix Colors · grass.3";
+  v.setValueForMode(dark.modeId, {"r":0.10588235294117647,"g":0.16470588235294117,"b":0.11764705882352941});
+  v.setValueForMode(light.modeId, {"r":0.9137254901960784,"g":0.9647058823529412,"b":0.9137254901960784});
+  byName.set("grass/3", v);
+  log.created.push("grass/3");
+}
+
+// CREATE grass/4  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/4", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-4)");
+  v.description = "Radix Colors · grass.4";
+  v.setValueForMode(dark.modeId, {"r":0.11372549019607843,"g":0.22745098039215686,"b":0.1411764705882353});
+  v.setValueForMode(light.modeId, {"r":0.8549019607843137,"g":0.9450980392156862,"b":0.8588235294117647});
+  byName.set("grass/4", v);
+  log.created.push("grass/4");
+}
+
+// CREATE grass/5  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/5", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-5)");
+  v.description = "Radix Colors · grass.5";
+  v.setValueForMode(dark.modeId, {"r":0.1450980392156863,"g":0.2823529411764706,"b":0.17647058823529413});
+  v.setValueForMode(light.modeId, {"r":0.788235294117647,"g":0.9098039215686274,"b":0.792156862745098});
+  byName.set("grass/5", v);
+  log.created.push("grass/5");
+}
+
+// CREATE grass/6  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/6", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-6)");
+  v.description = "Radix Colors · grass.6";
+  v.setValueForMode(dark.modeId, {"r":0.17647058823529413,"g":0.3411764705882353,"b":0.21176470588235294});
+  v.setValueForMode(light.modeId, {"r":0.6980392156862745,"g":0.8666666666666667,"b":0.7098039215686275});
+  byName.set("grass/6", v);
+  log.created.push("grass/6");
+}
+
+// CREATE grass/7  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/7", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-7)");
+  v.description = "Radix Colors · grass.7";
+  v.setValueForMode(dark.modeId, {"r":0.21176470588235294,"g":0.403921568627451,"b":0.25098039215686274});
+  v.setValueForMode(light.modeId, {"r":0.5803921568627451,"g":0.807843137254902,"b":0.6039215686274509});
+  byName.set("grass/7", v);
+  log.created.push("grass/7");
+}
+
+// CREATE grass/8  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/8", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-8)");
+  v.description = "Radix Colors · grass.8";
+  v.setValueForMode(dark.modeId, {"r":0.24313725490196078,"g":0.4745098039215686,"b":0.28627450980392155});
+  v.setValueForMode(light.modeId, {"r":0.396078431372549,"g":0.7294117647058823,"b":0.4549019607843137});
+  byName.set("grass/8", v);
+  log.created.push("grass/8");
+}
+
+// CREATE grass/9  (scale-step)
+{
+  const v = figma.variables.createVariable("grass/9", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--grass-9)");
+  v.description = "Radix Colors · grass.9";
+  v.setValueForMode(dark.modeId, {"r":0.27450980392156865,"g":0.6549019607843137,"b":0.34509803921568627});
+  v.setValueForMode(light.modeId, {"r":0.27450980392156865,"g":0.6549019607843137,"b":0.34509803921568627});
+  byName.set("grass/9", v);
+  log.created.push("grass/9");
+}
+
+// CREATE sand/1  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/1", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-1)");
+  v.description = "Radix Colors · sand.1";
+  v.setValueForMode(dark.modeId, {"r":0.06666666666666667,"g":0.06666666666666667,"b":0.06274509803921569});
+  v.setValueForMode(light.modeId, {"r":0.9921568627450981,"g":0.9921568627450981,"b":0.9882352941176471});
+  byName.set("sand/1", v);
+  log.created.push("sand/1");
+}
+
+// CREATE sand/10  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/10", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-10)");
+  v.description = "Radix Colors · sand.10";
+  v.setValueForMode(dark.modeId, {"r":0.48627450980392156,"g":0.4823529411764706,"b":0.4549019607843137});
+  v.setValueForMode(light.modeId, {"r":0.5098039215686274,"g":0.5098039215686274,"b":0.48627450980392156});
+  byName.set("sand/10", v);
+  log.created.push("sand/10");
+}
+
+// CREATE sand/11  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/11", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-11)");
+  v.description = "Radix Colors · sand.11";
+  v.setValueForMode(dark.modeId, {"r":0.7098039215686275,"g":0.7019607843137254,"b":0.6784313725490196});
+  v.setValueForMode(light.modeId, {"r":0.38823529411764707,"g":0.38823529411764707,"b":0.3686274509803922});
+  byName.set("sand/11", v);
+  log.created.push("sand/11");
+}
+
+// CREATE sand/12  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/12", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-12)");
+  v.description = "Radix Colors · sand.12";
+  v.setValueForMode(dark.modeId, {"r":0.9333333333333333,"g":0.9333333333333333,"b":0.9254901960784314});
+  v.setValueForMode(light.modeId, {"r":0.12941176470588237,"g":0.12549019607843137,"b":0.10980392156862745});
+  byName.set("sand/12", v);
+  log.created.push("sand/12");
+}
+
+// CREATE sand/2  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/2", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-2)");
+  v.description = "Radix Colors · sand.2";
+  v.setValueForMode(dark.modeId, {"r":0.09803921568627451,"g":0.09803921568627451,"b":0.09411764705882353});
+  v.setValueForMode(light.modeId, {"r":0.9764705882352941,"g":0.9764705882352941,"b":0.9725490196078431});
+  byName.set("sand/2", v);
+  log.created.push("sand/2");
+}
+
+// CREATE sand/3  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/3", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-3)");
+  v.description = "Radix Colors · sand.3";
+  v.setValueForMode(dark.modeId, {"r":0.13333333333333333,"g":0.13333333333333333,"b":0.12941176470588237});
+  v.setValueForMode(light.modeId, {"r":0.9450980392156862,"g":0.9411764705882353,"b":0.9372549019607843});
+  byName.set("sand/3", v);
+  log.created.push("sand/3");
+}
+
+// CREATE sand/4  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/4", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-4)");
+  v.description = "Radix Colors · sand.4";
+  v.setValueForMode(dark.modeId, {"r":0.16470588235294117,"g":0.16470588235294117,"b":0.1568627450980392});
+  v.setValueForMode(light.modeId, {"r":0.9137254901960784,"g":0.9098039215686274,"b":0.9019607843137255});
+  byName.set("sand/4", v);
+  log.created.push("sand/4");
+}
+
+// CREATE sand/5  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/5", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-5)");
+  v.description = "Radix Colors · sand.5";
+  v.setValueForMode(dark.modeId, {"r":0.19215686274509805,"g":0.19215686274509805,"b":0.1803921568627451});
+  v.setValueForMode(light.modeId, {"r":0.8862745098039215,"g":0.8823529411764706,"b":0.8705882352941177});
+  byName.set("sand/5", v);
+  log.created.push("sand/5");
+}
+
+// CREATE sand/6  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/6", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-6)");
+  v.description = "Radix Colors · sand.6";
+  v.setValueForMode(dark.modeId, {"r":0.23137254901960785,"g":0.22745098039215686,"b":0.21568627450980393});
+  v.setValueForMode(light.modeId, {"r":0.8549019607843137,"g":0.8509803921568627,"b":0.8392156862745098});
+  byName.set("sand/6", v);
+  log.created.push("sand/6");
+}
+
+// CREATE sand/7  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/7", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-7)");
+  v.description = "Radix Colors · sand.7";
+  v.setValueForMode(dark.modeId, {"r":0.28627450980392155,"g":0.2823529411764706,"b":0.26666666666666666});
+  v.setValueForMode(light.modeId, {"r":0.8117647058823529,"g":0.807843137254902,"b":0.792156862745098});
+  byName.set("sand/7", v);
+  log.created.push("sand/7");
+}
+
+// CREATE sand/8  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/8", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-8)");
+  v.description = "Radix Colors · sand.8";
+  v.setValueForMode(dark.modeId, {"r":0.3843137254901961,"g":0.3764705882352941,"b":0.3568627450980392});
+  v.setValueForMode(light.modeId, {"r":0.7372549019607844,"g":0.7333333333333333,"b":0.7098039215686275});
+  byName.set("sand/8", v);
+  log.created.push("sand/8");
+}
+
+// CREATE sand/9  (scale-step)
+{
+  const v = figma.variables.createVariable("sand/9", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--sand-9)");
+  v.description = "Radix Colors · sand.9";
+  v.setValueForMode(dark.modeId, {"r":0.43529411764705883,"g":0.42745098039215684,"b":0.4});
+  v.setValueForMode(light.modeId, {"r":0.5529411764705883,"g":0.5529411764705883,"b":0.5254901960784314});
+  byName.set("sand/9", v);
+  log.created.push("sand/9");
+}
+
+// CREATE tomato/1  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/1", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-1)");
+  v.description = "Radix Colors · tomato.1";
+  v.setValueForMode(dark.modeId, {"r":0.09411764705882353,"g":0.06666666666666667,"b":0.06666666666666667});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.9882352941176471,"b":0.9882352941176471});
+  byName.set("tomato/1", v);
+  log.created.push("tomato/1");
+}
+
+// CREATE tomato/10  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/10", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-10)");
+  v.description = "Radix Colors · tomato.10";
+  v.setValueForMode(dark.modeId, {"r":0.9254901960784314,"g":0.3803921568627451,"b":0.25882352941176473});
+  v.setValueForMode(light.modeId, {"r":0.8666666666666667,"g":0.26666666666666666,"b":0.1450980392156863});
+  byName.set("tomato/10", v);
+  log.created.push("tomato/10");
+}
+
+// CREATE tomato/11  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/11", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-11)");
+  v.description = "Radix Colors · tomato.11";
+  v.setValueForMode(dark.modeId, {"r":1,"g":0.592156862745098,"b":0.49019607843137253});
+  v.setValueForMode(light.modeId, {"r":0.8196078431372549,"g":0.20392156862745098,"b":0.08235294117647059});
+  byName.set("tomato/11", v);
+  log.created.push("tomato/11");
+}
+
+// CREATE tomato/12  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/12", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-12)");
+  v.description = "Radix Colors · tomato.12";
+  v.setValueForMode(dark.modeId, {"r":0.984313725490196,"g":0.8274509803921568,"b":0.796078431372549});
+  v.setValueForMode(light.modeId, {"r":0.3607843137254902,"g":0.15294117647058825,"b":0.12156862745098039});
+  byName.set("tomato/12", v);
+  log.created.push("tomato/12");
+}
+
+// CREATE tomato/2  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/2", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-2)");
+  v.description = "Radix Colors · tomato.2";
+  v.setValueForMode(dark.modeId, {"r":0.12156862745098039,"g":0.08235294117647059,"b":0.07450980392156863});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.9725490196078431,"b":0.9686274509803922});
+  byName.set("tomato/2", v);
+  log.created.push("tomato/2");
+}
+
+// CREATE tomato/3  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/3", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-3)");
+  v.description = "Radix Colors · tomato.3";
+  v.setValueForMode(dark.modeId, {"r":0.2235294117647059,"g":0.09019607843137255,"b":0.0784313725490196});
+  v.setValueForMode(light.modeId, {"r":0.996078431372549,"g":0.9215686274509803,"b":0.9058823529411765});
+  byName.set("tomato/3", v);
+  log.created.push("tomato/3");
+}
+
+// CREATE tomato/4  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/4", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-4)");
+  v.description = "Radix Colors · tomato.4";
+  v.setValueForMode(dark.modeId, {"r":0.3058823529411765,"g":0.08235294117647059,"b":0.06666666666666667});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.8627450980392157,"b":0.8274509803921568});
+  byName.set("tomato/4", v);
+  log.created.push("tomato/4");
+}
+
+// CREATE tomato/5  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/5", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-5)");
+  v.description = "Radix Colors · tomato.5";
+  v.setValueForMode(dark.modeId, {"r":0.3686274509803922,"g":0.10980392156862745,"b":0.08627450980392157});
+  v.setValueForMode(light.modeId, {"r":1,"g":0.803921568627451,"b":0.7607843137254902});
+  byName.set("tomato/5", v);
+  log.created.push("tomato/5");
+}
+
+// CREATE tomato/6  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/6", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-6)");
+  v.description = "Radix Colors · tomato.6";
+  v.setValueForMode(dark.modeId, {"r":0.43137254901960786,"g":0.1607843137254902,"b":0.12549019607843137});
+  v.setValueForMode(light.modeId, {"r":0.9921568627450981,"g":0.7411764705882353,"b":0.6862745098039216});
+  byName.set("tomato/6", v);
+  log.created.push("tomato/6");
+}
+
+// CREATE tomato/7  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/7", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-7)");
+  v.description = "Radix Colors · tomato.7";
+  v.setValueForMode(dark.modeId, {"r":0.5215686274509804,"g":0.22745098039215686,"b":0.17647058823529413});
+  v.setValueForMode(light.modeId, {"r":0.9607843137254902,"g":0.6588235294117647,"b":0.596078431372549});
+  byName.set("tomato/7", v);
+  log.created.push("tomato/7");
+}
+
+// CREATE tomato/8  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/8", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-8)");
+  v.description = "Radix Colors · tomato.8";
+  v.setValueForMode(dark.modeId, {"r":0.6745098039215687,"g":0.30196078431372547,"b":0.2235294117647059});
+  v.setValueForMode(light.modeId, {"r":0.9254901960784314,"g":0.5568627450980392,"b":0.4823529411764706});
+  byName.set("tomato/8", v);
+  log.created.push("tomato/8");
+}
+
+// CREATE tomato/9  (scale-step)
+{
+  const v = figma.variables.createVariable("tomato/9", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL","TEXT_FILL","STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--tomato-9)");
+  v.description = "Radix Colors · tomato.9";
+  v.setValueForMode(dark.modeId, {"r":0.8980392156862745,"g":0.30196078431372547,"b":0.1803921568627451});
+  v.setValueForMode(light.modeId, {"r":0.8980392156862745,"g":0.30196078431372547,"b":0.1803921568627451});
+  byName.set("tomato/9", v);
+  log.created.push("tomato/9");
+}
+
+// CREATE bg/elev-0  (alias)
+{
+  const v = figma.variables.createVariable("bg/elev-0", coll, "COLOR");
+  v.scopes = ["FRAME_FILL","SHAPE_FILL"];
+  v.setVariableCodeSyntax("WEB", "var(--bg-elev-0)");
+  v.description = "DESIGN.md · colorAliases.bg-elev-0 → sand.2";
+  const target = getOrThrow("sand/2");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  byName.set("bg/elev-0", v);
+  log.created.push("bg/elev-0");
+}
+
+// CREATE border/focus  (alias)
+{
+  const v = figma.variables.createVariable("border/focus", coll, "COLOR");
+  v.scopes = ["STROKE_COLOR"];
+  v.setVariableCodeSyntax("WEB", "var(--border-focus)");
+  v.description = "DESIGN.md · colorAliases.border-focus → sand.9";
+  const target = getOrThrow("sand/9");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  byName.set("border/focus", v);
+  log.created.push("border/focus");
+}
+
+// UPDATE accent/applied  (alias)
+{
+  const v = byName.get("accent/applied");
+  if (!v) throw new Error('Snapshot drift: accent/applied not found in Figma');
+  const target = getOrThrow("grass/11");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("accent/applied");
+}
+
+// UPDATE accent/diverges  (alias)
+{
+  const v = byName.get("accent/diverges");
+  if (!v) throw new Error('Snapshot drift: accent/diverges not found in Figma');
+  const target = getOrThrow("amber/11");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("accent/diverges");
+}
+
+// UPDATE accent/signal  (alias)
+{
+  const v = byName.get("accent/signal");
+  if (!v) throw new Error('Snapshot drift: accent/signal not found in Figma');
+  const target = getOrThrow("tomato/9");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("accent/signal");
+}
+
+// UPDATE accent/signal-dim  (alias)
+{
+  const v = byName.get("accent/signal-dim");
+  if (!v) throw new Error('Snapshot drift: accent/signal-dim not found in Figma');
+  const target = getOrThrow("tomato/11");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("accent/signal-dim");
+}
+
+// UPDATE bg/elev-1  (alias)
+{
+  const v = byName.get("bg/elev-1");
+  if (!v) throw new Error('Snapshot drift: bg/elev-1 not found in Figma');
+  const target = getOrThrow("sand/3");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("bg/elev-1");
+}
+
+// UPDATE bg/elev-2  (alias)
+{
+  const v = byName.get("bg/elev-2");
+  if (!v) throw new Error('Snapshot drift: bg/elev-2 not found in Figma');
+  const target = getOrThrow("sand/4");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("bg/elev-2");
+}
+
+// UPDATE bg/elev-3  (alias)
+{
+  const v = byName.get("bg/elev-3");
+  if (!v) throw new Error('Snapshot drift: bg/elev-3 not found in Figma');
+  const target = getOrThrow("sand/5");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("bg/elev-3");
+}
+
+// UPDATE bg/page  (alias)
+{
+  const v = byName.get("bg/page");
+  if (!v) throw new Error('Snapshot drift: bg/page not found in Figma');
+  const target = getOrThrow("sand/1");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("bg/page");
+}
+
+// UPDATE border/hairline  (alias)
+{
+  const v = byName.get("border/hairline");
+  if (!v) throw new Error('Snapshot drift: border/hairline not found in Figma');
+  const target = getOrThrow("sand/6");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("border/hairline");
+}
+
+// UPDATE border/strong  (alias)
+{
+  const v = byName.get("border/strong");
+  if (!v) throw new Error('Snapshot drift: border/strong not found in Figma');
+  const target = getOrThrow("sand/7");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("border/strong");
+}
+
+// UPDATE fg/primary  (alias)
+{
+  const v = byName.get("fg/primary");
+  if (!v) throw new Error('Snapshot drift: fg/primary not found in Figma');
+  const target = getOrThrow("sand/12");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("fg/primary");
+}
+
+// UPDATE fg/quaternary  (alias)
+{
+  const v = byName.get("fg/quaternary");
+  if (!v) throw new Error('Snapshot drift: fg/quaternary not found in Figma');
+  const target = getOrThrow("sand/7");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("fg/quaternary");
+}
+
+// UPDATE fg/secondary  (alias)
+{
+  const v = byName.get("fg/secondary");
+  if (!v) throw new Error('Snapshot drift: fg/secondary not found in Figma');
+  const target = getOrThrow("sand/11");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("fg/secondary");
+}
+
+// UPDATE fg/tertiary  (alias)
+{
+  const v = byName.get("fg/tertiary");
+  if (!v) throw new Error('Snapshot drift: fg/tertiary not found in Figma');
+  const target = getOrThrow("sand/10");
+  v.setValueForMode(dark.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  v.setValueForMode(light.modeId, { type: "VARIABLE_ALIAS", id: target.id });
+  log.updated.push("fg/tertiary");
+}
 
 return log;

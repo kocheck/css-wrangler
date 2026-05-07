@@ -43,6 +43,7 @@
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@figma/plugin-typings": "^1.106.0",
     "@google/design.md": "^0.1.1",
+    "@radix-ui/colors": "^3.0.0",
     "@types/chrome": "^0.0.287",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.6.0",

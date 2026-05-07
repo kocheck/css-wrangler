@@ -11,50 +11,60 @@ description: >-
 # ─────────────────────────────────────────────────────────────────────────
 # This frontmatter is the source of truth for src/panel/styles/tokens.css.
 # Run `pnpm tokens` to regenerate after edits. Run `pnpm tokens:check` in CI.
+#
+# Color schema (post-Radix migration):
+#   colorScales:        list of @radix-ui/colors scales — hex values come
+#                       from the npm package, NOT from this file. Update by
+#                       `pnpm update @radix-ui/colors`.
+#   colorAliases:       semantic name → "scale.step". Aliases preserve the
+#                       existing public API (--fg-primary, --accent-signal,
+#                       …) so consumer code doesn't churn.
+#
 # Mapping rule for the codegen (scripts/build-tokens.mjs):
-#   colors.{name}        →  --{name}                    (e.g. fg-primary, bg-page)
-#   colorsLight.{name}   →  --{name} inside [data-theme="light"]
-#   fonts.{name}         →  --font-{name}
-#   type.{name}          →  --type-{name}
-#   tracking.{name}      →  --tracking-{name}
-#   leading.{name}       →  --leading-{name}
-#   spacing.{name}       →  --sp-{name}     (section name = `spacing` per @google/design.md schema)
-#   rounded.{name}       →  --radius-{name} (section name = `rounded` per @google/design.md schema)
-#   motion.{name}        →  --motion-{name}
-#   ease.{name}          →  --ease-{name}
+#   colorScales[scale]    →  --<scale>-1 .. --<scale>-12  (dark in :root,
+#                            light under [data-theme="light"])
+#   colorAliases[name]    →  --<name>: var(--<scale>-<step>)
+#   fonts.{name}          →  --font-{name}
+#   type.{name}           →  --type-{name}
+#   tracking.{name}       →  --tracking-{name}
+#   leading.{name}        →  --leading-{name}
+#   spacing.{name}        →  --sp-{name}     (section name = `spacing` per @google/design.md schema)
+#   rounded.{name}        →  --radius-{name} (section name = `rounded` per @google/design.md schema)
+#   motion.{name}         →  --motion-{name}
+#   ease.{name}           →  --ease-{name}
 # Sections `typography:` and `components:` are NOT codegen'd — they're rich
 # documentation for design-tool consumers (Pencil, Figma plugins, etc.).
 # ─────────────────────────────────────────────────────────────────────────
 
-# Default (dark) palette
-colors:
-  fg-primary: "#fafaf7"
-  fg-secondary: "#a8a8a3"
-  fg-tertiary: "#838380"
-  fg-quaternary: "#3d3d3a"
-  bg-page: "#0e0e10"
-  bg-elev-1: "#131316"
-  bg-elev-2: "#1a1a1e"
-  bg-elev-3: "#232328"
-  border-hairline: "#2a2a2e"
-  border-strong: "#3d3d42"
-  accent-signal: "#ff3d00"
-  accent-signal-dim: "#b32a00"
-  accent-applied: "#7ae582"
-  accent-diverges: "#ffb800"
+# Radix scales the panel + web pull in. Hex values live in
+# @radix-ui/colors; this list just declares which ones we want.
+colorScales:
+  - sand        # neutrals (warm grayscale)
+  - tomato      # signal / brand
+  - grass       # applied / synced
+  - amber       # diverges / warnings
 
-# Light-theme overrides (paired keys with `colors:` above)
-colorsLight:
-  fg-primary: "#0e0e10"
-  fg-secondary: "#4a4a48"
-  fg-tertiary: "#737370"
-  fg-quaternary: "#c0c0bc"
-  bg-page: "#fafaf7"
-  bg-elev-1: "#f3f3ee"
-  bg-elev-2: "#ebebe5"
-  bg-elev-3: "#e0e0d8"
-  border-hairline: "#d6d6d0"
-  border-strong: "#b8b8b2"
+# Semantic aliases: every name consumer code uses today. Each resolves to
+# a scale step. Step 9 is Radix's "solid bg" step (mode-stable). Step 11
+# is Radix's "low-contrast text" step (mode-aware) — used wherever an
+# accent appears as text or icon on the page background.
+colorAliases:
+  fg-primary: sand.12        # high-contrast text · headlines
+  fg-secondary: sand.11      # captions · metadata (AA against bg-page)
+  fg-tertiary: sand.10       # hints · placeholders
+  fg-quaternary: sand.7      # disabled (intentionally low contrast)
+  bg-page: sand.1            # app background
+  bg-elev-0: sand.2          # subtle row hover (Tier 2)
+  bg-elev-1: sand.3          # cards
+  bg-elev-2: sand.4          # nested surfaces
+  bg-elev-3: sand.5          # inputs
+  border-hairline: sand.6    # dividers
+  border-strong: sand.7      # emphasis dividers
+  border-focus: sand.9       # keyboard focus ring (≥ 3:1 against bg-page in both modes)
+  accent-signal: tomato.9    # solid brand fill (PICK button, picker outline)
+  accent-signal-dim: tomato.11  # brand text/icon — AA in both modes
+  accent-applied: grass.11   # applied / synced text — AA in both modes
+  accent-diverges: amber.11  # warning text — AA in both modes
 
 fonts:
   mono: '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
@@ -211,18 +221,43 @@ it doesn't ship.
 
 ## Colors
 
-The palette splits into a high-contrast neutral spine and three semantic
-accents. Foreground steps from `fg-primary` (text) through `fg-quaternary`
-(disabled). Background steps `bg-page` → `bg-elev-3` for cards, expanded
-edit bodies, and inputs.
+Colors come from [Radix Colors](https://www.radix-ui.com/colors). Four
+12-step scales — `sand` (neutrals), `tomato` (signal), `grass` (applied),
+`amber` (diverges) — ship as raw `--<scale>-1` … `--<scale>-12` variables
+in both modes. Semantic aliases (`--fg-primary`, `--accent-signal`, …)
+resolve to specific steps. Components consume aliases by default; opt
+into raw scales when an intermediate step is needed (hover state, active
+state, custom border).
 
-- **`accent-signal` (#FF3D00):** PICK, destructive, active outline on the
-  page. Used **sparingly** — only to mean "this is live" or "this is
-  dangerous". If everything is orange, nothing is.
-- **`accent-applied` (#7AE582):** Applied / synced edits, copy-success.
-- **`accent-diverges` (#FFB800):** Diverges-from-token warnings.
-- **`border-hairline` / `border-strong`:** Cool grays for dividers. No
-  shadows.
+Why Radix: every step is engineered to a specific WCAG contrast against
+its scale's step 1, so accessibility is built in. Step 9 is mode-stable
+("solid bg" — brand color is the same in light and dark). Step 11 is
+mode-aware ("low-contrast text" — flips correctly so accent text reads
+on either background). Step 12 is "high-contrast text". Step 6 is
+"subtle border". The role of each step is consistent across every scale.
+
+Step roles in this project:
+
+- `sand-1` → `bg-page` (app surface)
+- `sand-2..5` → `bg-elev-0..3` (rising elevation)
+- `sand-6..7` → `border-hairline` / `border-strong` (dividers)
+- `sand-8` → `border-focus` (keyboard focus ring)
+- `sand-7` → `fg-quaternary` (intentionally low — disabled only)
+- `sand-10..12` → `fg-tertiary` / `fg-secondary` / `fg-primary`
+- `tomato-9` → `accent-signal` (PICK button bg, picker outline)
+- `tomato-11` → `accent-signal-dim` (brand text/icon, AA in both modes)
+- `grass-11` → `accent-applied` (applied / synced, AA in both modes)
+- `amber-11` → `accent-diverges` (warning text, AA in both modes)
+
+`accent-signal` is sparingly applied — only to mean "this is live" or
+"this is dangerous". If everything is orange, nothing is.
+
+To change an accent's hue, pick a different Radix scale (e.g. swap
+`tomato` for `red` or `crimson`) and update both `colorScales` and the
+relevant `colorAliases` entries. To shift a token a step warmer or
+cooler, change only its alias mapping (`fg-secondary: sand.10` instead
+of `sand.11`). The Radix package is the only source of step hexes —
+never hand-edit values.
 
 ## Typography
 
