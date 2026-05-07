@@ -113,6 +113,15 @@ describe("buildPatch", () => {
     expect(patch.edits[0]?.changes[0]?.mediaQuery).toBeNull();
   });
 
+  it("omits media blocks when an edit only has desktop changes", () => {
+    const edit = makeEdit();
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    const patchEdit = patch.edits[0];
+    if (!patchEdit) throw new Error("expected patch edit");
+
+    expect(patchEdit.media).toBeUndefined();
+  });
+
   it("emits @media (max-width: 768px) for a tablet change", () => {
     const edit = makeEdit({
       changes: [
@@ -145,6 +154,55 @@ describe("buildPatch", () => {
     });
     const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
     expect(patch.edits[0]?.changes[0]?.mediaQuery).toBe("@media (max-width: 375px)");
+  });
+
+  it("groups non-desktop changes into additive media blocks", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "desktop",
+          property: "padding-top",
+          from: "8px",
+          to: "16px",
+          tailwindHint: null,
+        },
+        {
+          state: "default",
+          breakpoint: "tablet",
+          property: "padding-top",
+          from: "8px",
+          to: "12px",
+          tailwindHint: null,
+        },
+        {
+          state: "hover",
+          breakpoint: "mobile",
+          property: "background-color",
+          from: "rgb(255, 255, 255)",
+          to: "rgb(0, 0, 0)",
+          tailwindHint: null,
+        },
+      ],
+    });
+
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    const patchEdit = patch.edits[0];
+    if (!patchEdit) throw new Error("expected patch edit");
+
+    expect(patchEdit.changes).toHaveLength(3);
+    expect(patchEdit.media).toEqual([
+      {
+        breakpoint: "tablet",
+        query: "@media (max-width: 768px)",
+        changes: [patchEdit.changes[1]],
+      },
+      {
+        breakpoint: "mobile",
+        query: "@media (max-width: 375px)",
+        changes: [patchEdit.changes[2]],
+      },
+    ]);
   });
 });
 

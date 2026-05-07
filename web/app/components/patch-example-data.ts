@@ -25,6 +25,7 @@ export const examplePatch: Patch = {
           property: "padding-top",
           from: "12px",
           to: "16px",
+          tailwindHint: "pt-4",
           mediaQuery: null,
         },
         {
@@ -33,7 +34,25 @@ export const examplePatch: Patch = {
           property: "padding-top",
           from: "12px",
           to: "10px",
+          tailwindHint: "pt-2.5",
           mediaQuery: "@media (max-width: 768px)",
+        },
+      ],
+      media: [
+        {
+          breakpoint: "tablet",
+          query: "@media (max-width: 768px)",
+          changes: [
+            {
+              state: "default",
+              breakpoint: "tablet",
+              property: "padding-top",
+              from: "12px",
+              to: "10px",
+              tailwindHint: "pt-2.5",
+              mediaQuery: "@media (max-width: 768px)",
+            },
+          ],
         },
       ],
     },
