@@ -34,8 +34,13 @@ describe("parseLength", () => {
     expect(parseLength("  12px  ")).toEqual({ numeric: "12", unit: "px" });
   });
 
+  it("preserves keyword values like `auto` (case-insensitive)", () => {
+    expect(parseLength("auto")).toEqual({ numeric: "", unit: "auto" });
+    expect(parseLength("AUTO")).toEqual({ numeric: "", unit: "auto" });
+    expect(parseLength("  auto  ")).toEqual({ numeric: "", unit: "auto" });
+  });
+
   it("returns empty for malformed input", () => {
-    expect(parseLength("auto")).toEqual({ numeric: "", unit: "" });
     expect(parseLength("1.2.3px")).toEqual({ numeric: "", unit: "" });
   });
 });
@@ -55,6 +60,11 @@ describe("buildLength", () => {
 
   it("returns empty when numeric is just a sign", () => {
     expect(buildLength("-", "px")).toBe("");
+  });
+
+  it("returns the keyword verbatim when unit is `auto`", () => {
+    expect(buildLength("", "auto")).toBe("auto");
+    expect(buildLength("100", "auto")).toBe("auto");
   });
 });
 

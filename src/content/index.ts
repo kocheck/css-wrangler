@@ -16,6 +16,7 @@ import {
   reattachStyleTag,
   rebuildStyleTag,
   removeAllRulesFor,
+  removeRule,
   setForceStateClass,
   tagElement,
 } from "./injector";
@@ -132,6 +133,16 @@ function handle(msg: PanelToContent, respond: (m: ResponsePayload) => void): voi
 
     case "apply-edit":
       handleApply(msg);
+      respond({ ok: true });
+      return;
+
+    case "remove-rule":
+      removeRule({
+        wranglerId: msg.wranglerId,
+        state: msg.state,
+        breakpoint: msg.breakpoint,
+        property: msg.property,
+      });
       respond({ ok: true });
       return;
 

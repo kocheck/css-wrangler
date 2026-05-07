@@ -96,7 +96,16 @@ export function rebuildStyleTag(): void {
 }
 
 export function applyRule(key: RuleKey, value: string): void {
+  if (!value.trim()) {
+    removeRule(key);
+    return;
+  }
   rules.set(ruleKeyId(key), { key, value });
+  rebuildStyleTag();
+}
+
+export function removeRule(key: RuleKey): void {
+  if (!rules.delete(ruleKeyId(key))) return;
   rebuildStyleTag();
 }
 

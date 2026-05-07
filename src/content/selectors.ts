@@ -56,7 +56,20 @@ export function getStableClasses(el: Element): string[] {
 }
 
 function escapeAttrValue(v: string): string {
-  return v.replace(/"/g, '\\"');
+  return v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function classSelector(cls: string): string {
+  return `.${CSS.escape(cls)}`;
+}
+
+function firstDomPathClass(el: Element): string | null {
+  for (const cls of el.classList) {
+    const extracted = extractCssModulesName(cls);
+    if (extracted) return extracted;
+    if (!isGeneratedClass(cls)) return cls;
+  }
+  return null;
 }
 
 function visibleText(el: Element, max = 80): string | null {
@@ -71,10 +84,10 @@ export function buildDomPath(el: Element): string {
   while (node && node.nodeType === 1 && node.tagName.toLowerCase() !== "html") {
     const current: Element = node;
     const tag = current.tagName.toLowerCase();
-    const stable = getStableClasses(current);
+    const pathClass = firstDomPathClass(current);
     let segment = tag;
-    if (stable.length > 0) {
-      segment += `.${stable[0]}`;
+    if (pathClass) {
+      segment += classSelector(pathClass);
     } else if (current.parentElement) {
       const same = Array.from(current.parentElement.children).filter(
         (sib) => sib.tagName === current.tagName,
@@ -101,15 +114,15 @@ export function generateSelectors(el: Element): SelectorCandidate[] {
     if (attr.name === "data-reactid" || attr.name.startsWith("data-v-")) continue;
     candidates.push({
       type: "data-attr",
-      value: `[${attr.name}="${escapeAttrValue(attr.value)}"]`,
+      value: `[${CSS.escape(attr.name)}="${escapeAttrValue(attr.value)}"]`,
       stability: "high",
     });
   }
 
   // 2. id
   const id = el.getAttribute("id");
-  if (isMeaningfulId(id)) {
-    candidates.push({ type: "id", value: `#${id}`, stability: "high" });
+  if (id && isMeaningfulId(id)) {
+    candidates.push({ type: "id", value: `#${CSS.escape(id)}`, stability: "high" });
   }
 
   // 3. stable classes
@@ -117,7 +130,7 @@ export function generateSelectors(el: Element): SelectorCandidate[] {
   if (stable.length > 0) {
     candidates.push({
       type: "class",
-      value: `${tag}.${stable.join(".")}`,
+      value: `${tag}${stable.map(classSelector).join("")}`,
       stability: "medium",
     });
   }

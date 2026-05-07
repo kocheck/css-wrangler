@@ -150,8 +150,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     const edit = get().edits.find((e) => e.id === editId);
     if (!edit) return;
     const k = changeKey(state, breakpoint, property);
-    const from = edit.baseline[k] ?? "";
-    const next: PropertyChange = { state, breakpoint, property, from, to: value };
+    const isClear = !value;
     const groupId = edit.siblingGroup;
     const targetIds = new Set<string>([editId]);
     if (groupId) {
@@ -159,35 +158,44 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
         if (e.siblingGroup === groupId) targetIds.add(e.id);
       }
     }
+    const matches = (c: PropertyChange) =>
+      c.state === state && c.breakpoint === breakpoint && c.property === property;
 
-    set((s) => ({
-      edits: s.edits.map((e) => {
-        if (!targetIds.has(e.id)) return e;
-        const filtered = e.changes.filter(
-          (c) => !(c.state === state && c.breakpoint === breakpoint && c.property === property),
-        );
-        // each sibling tracks its own `from` (its own baseline), but shares state/property/to
-        const localFrom = e.baseline[k] ?? "";
-        const change: PropertyChange = e.id === editId ? next : { ...next, from: localFrom };
-        return { ...e, changes: [...filtered, change] };
-      }),
-      history: [...s.history, { kind: "remove-change", editId, changeKey: k }],
-    }));
+    // Empty value = clear: drop the existing change so the patch JSON doesn't
+    // carry `to: ""` (would violate the patch contract). Non-undoable.
+    if (isClear) {
+      if (!edit.changes.some(matches)) return;
+      set((s) => ({
+        edits: s.edits.map((e) =>
+          targetIds.has(e.id) ? { ...e, changes: e.changes.filter((c) => !matches(c)) } : e,
+        ),
+      }));
+    } else {
+      const from = edit.baseline[k] ?? "";
+      const next: PropertyChange = { state, breakpoint, property, from, to: value };
+      set((s) => ({
+        edits: s.edits.map((e) => {
+          if (!targetIds.has(e.id)) return e;
+          // each sibling tracks its own `from` (its own baseline), but shares state/property/to
+          const localFrom = e.baseline[k] ?? "";
+          const change: PropertyChange = e.id === editId ? next : { ...next, from: localFrom };
+          return { ...e, changes: [...e.changes.filter((c) => !matches(c)), change] };
+        }),
+        history: [...s.history, { kind: "remove-change", editId, changeKey: k }],
+      }));
+    }
 
     const wranglerIds = Array.from(targetIds)
       .map((id) => get().edits.find((e) => e.id === id)?.element.wranglerId)
       .filter((id): id is string => Boolean(id));
     await Promise.all(
       wranglerIds.map((wranglerId) =>
-        sendToContent({
-          type: "apply-edit",
-          wranglerId,
-          state,
-          breakpoint,
-          property,
-          value,
-        }).catch((err) => {
-          console.error("[wrangler] apply-edit failed", err);
+        sendToContent(
+          isClear
+            ? { type: "remove-rule", wranglerId, state, breakpoint, property }
+            : { type: "apply-edit", wranglerId, state, breakpoint, property, value },
+        ).catch((err) => {
+          console.error(`[wrangler] ${isClear ? "remove-rule" : "apply-edit"} failed`, err);
         }),
       ),
     );
@@ -269,16 +277,30 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
         const target = get().edits.find((e) => e.id === id);
         if (!target) return Promise.resolve();
         const baseline = target.baseline[last.changeKey] ?? "";
-        if (!baseline) return Promise.resolve();
+        const wranglerId = target.element.wranglerId;
+        const state = stateStr as CssState;
+        const breakpoint = bpStr as BreakpointKey;
+        const property = prop as TierProperty;
+        if (!baseline) {
+          return sendToContent({
+            type: "remove-rule",
+            wranglerId,
+            state,
+            breakpoint,
+            property,
+          }).catch((err) => {
+            console.error("[wrangler] undo remove-rule failed", err);
+          });
+        }
         return sendToContent({
           type: "apply-edit",
-          wranglerId: target.element.wranglerId,
-          state: stateStr as CssState,
-          breakpoint: bpStr as BreakpointKey,
-          property: prop as TierProperty,
+          wranglerId,
+          state,
+          breakpoint,
+          property,
           value: baseline,
-        }).catch(() => {
-          /* ignore */
+        }).catch((err) => {
+          console.error("[wrangler] undo apply-edit failed", err);
         });
       }),
     );
