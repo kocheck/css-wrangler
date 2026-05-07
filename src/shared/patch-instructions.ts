@@ -28,7 +28,10 @@ export const PATCH_INSTRUCTIONS: readonly string[] = [
      deviation in DESIGN.md as a noted exception?"`,
   `For pages flagged \`stylingSystem: "tailwind"\`, prefer the suggested
    Tailwind classes over raw CSS unless the raw value is more accurate.`,
-  `Group \`@media\` rules properly. Don't duplicate selectors across
+  `When an edit includes a \`media\` array, treat it as the authoritative
+   grouping of breakpoint-scoped changes — \`changes\` is still the complete
+   list, but the \`media\` blocks tell you which \`@media\` query each
+   non-desktop change belongs in. Don't duplicate selectors across
    breakpoints when consolidation is cleaner.`,
 ];
 
