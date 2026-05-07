@@ -25,7 +25,10 @@ For each element:
      deviation in DESIGN.md as a noted exception?"
 6. For pages flagged \`stylingSystem: "tailwind"\`, prefer the suggested
    Tailwind classes over raw CSS unless the raw value is more accurate.
-7. Group \`@media\` rules properly. Don't duplicate selectors across
+7. When an edit includes a \`media\` array, treat it as the authoritative
+   grouping of breakpoint-scoped changes — \`changes\` is still the complete
+   list, but the \`media\` blocks tell you which \`@media\` query each
+   non-desktop change belongs in. Don't duplicate selectors across
    breakpoints when consolidation is cleaner.`;
 
 describe("renderInstructionsMarkdown", () => {

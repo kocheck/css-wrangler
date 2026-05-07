@@ -37,7 +37,10 @@ silently and consumers should ignore unknown fields.
 Each edit's `changes` array remains the complete list of requested source
 changes. Edits may also include an optional `media` array that groups
 non-desktop changes by `@media` query. That field is additive in v1.0:
-consumers that ignore it still see every change in `changes`.
+consumers that ignore it still see every change in `changes`. The `media`
+array is ordered by descending breakpoint width (`tablet` before `mobile`),
+matching the order in which the injector emits `@media` blocks; consumers
+that re-emit CSS should preserve this order.
 
 Example:
 

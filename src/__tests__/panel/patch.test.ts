@@ -204,6 +204,93 @@ describe("buildPatch", () => {
       },
     ]);
   });
+
+  it("emits a media block for a tablet-only edit (no desktop change)", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "tablet",
+          property: "padding-top",
+          from: "8px",
+          to: "12px",
+          tailwindHint: null,
+        },
+      ],
+    });
+
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    const patchEdit = patch.edits[0];
+    if (!patchEdit) throw new Error("expected patch edit");
+
+    expect(patchEdit.changes).toHaveLength(1);
+    expect(patchEdit.media).toEqual([
+      {
+        breakpoint: "tablet",
+        query: "@media (max-width: 768px)",
+        changes: [patchEdit.changes[0]],
+      },
+    ]);
+  });
+
+  it("emits a media block for a mobile-only edit (no desktop change)", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "mobile",
+          property: "padding-top",
+          from: "8px",
+          to: "10px",
+          tailwindHint: null,
+        },
+      ],
+    });
+
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    const patchEdit = patch.edits[0];
+    if (!patchEdit) throw new Error("expected patch edit");
+
+    expect(patchEdit.changes).toHaveLength(1);
+    expect(patchEdit.media).toEqual([
+      {
+        breakpoint: "mobile",
+        query: "@media (max-width: 375px)",
+        changes: [patchEdit.changes[0]],
+      },
+    ]);
+  });
+
+  it("groups multiple changes for the same breakpoint into one media block", () => {
+    const edit = makeEdit({
+      changes: [
+        {
+          state: "default",
+          breakpoint: "tablet",
+          property: "padding-top",
+          from: "8px",
+          to: "12px",
+          tailwindHint: null,
+        },
+        {
+          state: "default",
+          breakpoint: "tablet",
+          property: "font-size",
+          from: "16px",
+          to: "14px",
+          tailwindHint: null,
+        },
+      ],
+    });
+
+    const patch = buildPatch({ url: "x", stylingSystem: "plain", edits: [edit] });
+    const patchEdit = patch.edits[0];
+    if (!patchEdit) throw new Error("expected patch edit");
+
+    expect(patchEdit.media).toHaveLength(1);
+    expect(patchEdit.media?.[0]?.breakpoint).toBe("tablet");
+    expect(patchEdit.media?.[0]?.changes).toEqual([patchEdit.changes[0], patchEdit.changes[1]]);
+  });
 });
 
 describe("buildPatchMarkdown", () => {
