@@ -18,7 +18,17 @@ interface BuildArgs {
 
 type MediaBreakpoint = Exclude<BreakpointKey, "desktop">;
 
-const MEDIA_BREAKPOINT_ORDER: MediaBreakpoint[] = ["tablet", "mobile"];
+const MEDIA_BREAKPOINT_ORDER = ["tablet", "mobile"] as const satisfies readonly MediaBreakpoint[];
+
+// Compile-time guard: errors here if a new MediaBreakpoint is added without
+// being appended to MEDIA_BREAKPOINT_ORDER above.
+const _exhaustiveMediaOrder: Exclude<
+  MediaBreakpoint,
+  (typeof MEDIA_BREAKPOINT_ORDER)[number]
+> extends never
+  ? true
+  : never = true;
+void _exhaustiveMediaOrder;
 
 function hasMediaBreakpoint(bp: BreakpointKey): bp is MediaBreakpoint {
   return bp !== "desktop";
@@ -47,10 +57,7 @@ function buildMediaBlocks(changes: PropertyChange[]): PatchMediaBlock[] {
     const breakpointChanges = byBreakpoint[breakpoint];
     if (breakpointChanges.length === 0) return [];
 
-    const query = mediaQueryFor(breakpoint);
-    if (query === null) return [];
-
-    return [{ breakpoint, query, changes: breakpointChanges }];
+    return [{ breakpoint, query: mediaQueryFor(breakpoint), changes: breakpointChanges }];
   });
 }
 
