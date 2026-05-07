@@ -186,7 +186,7 @@ function ColorRow({ property, value, edited, diverges, onCommit, labelId }: RowP
           placeholder="#000000"
           aria-labelledby={labelId}
           onChange={(e) => setColor(e.target.value)}
-          onBlur={() => color && onCommit(color)}
+          onBlur={() => onCommit(color)}
           onKeyDown={(e) => {
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           }}
@@ -246,7 +246,7 @@ function TextRow({ property, value, edited, diverges, onCommit, labelId }: RowPr
           value={text}
           aria-labelledby={labelId}
           onChange={(e) => setText(e.target.value)}
-          onBlur={() => text && onCommit(text)}
+          onBlur={() => onCommit(text)}
           style={{ width: 96, textAlign: "left", padding: "var(--sp-2) var(--sp-3)" }}
         />
       </span>

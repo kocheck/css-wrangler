@@ -4,15 +4,19 @@ export interface ParsedValue {
 }
 
 const NUMERIC_RE = /^(-?\d*\.?\d+)\s*([a-z%]*)$/i;
+const KEYWORD_VALUES = new Set(["auto"]);
 
 export function parseLength(input: string): ParsedValue {
   const trimmed = input.trim();
+  const lower = trimmed.toLowerCase();
+  if (KEYWORD_VALUES.has(lower)) return { numeric: "", unit: lower };
   const m = NUMERIC_RE.exec(trimmed);
   if (m) return { numeric: m[1] ?? "", unit: m[2] ?? "" };
   return { numeric: "", unit: "" };
 }
 
 export function buildLength(numeric: string, unit: string): string {
+  if (KEYWORD_VALUES.has(unit)) return unit;
   if (numeric === "" || numeric === "-") return "";
   if (!unit) return numeric;
   return `${numeric}${unit}`;
@@ -59,6 +63,7 @@ export const UNITS_FOR_PROPERTY: Record<string, string[]> = {
   "font-size": ["px", "rem", "em", "%"],
   "line-height": ["", "px", "rem", "em"],
   "letter-spacing": ["px", "em"],
+  "font-weight": [""],
   width: ["px", "%", "rem", "vw", "auto"],
   height: ["px", "%", "rem", "vh", "auto"],
   gap: ["px", "rem", "em"],

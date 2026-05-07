@@ -31,6 +31,14 @@ export interface ApplyEditMsg {
   value: string;
 }
 
+export interface RemoveRuleMsg {
+  type: "remove-rule";
+  wranglerId: string;
+  state: CssState;
+  breakpoint: BreakpointKey;
+  property: TierProperty;
+}
+
 export interface RemoveEditMsg {
   type: "remove-edit";
   wranglerId: string;
@@ -98,6 +106,7 @@ export type PanelToContent =
   | StartPickMsg
   | CancelPickMsg
   | ApplyEditMsg
+  | RemoveRuleMsg
   | RemoveEditMsg
   | ClearAllMsg
   | DetectStylingMsg
