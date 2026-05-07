@@ -1,4 +1,4 @@
-import { BREAKPOINTS, mediaQueryFor, type BreakpointKey } from "@shared/constants";
+import { BREAKPOINTS, type BreakpointKey, mediaQueryFor } from "@shared/constants";
 import { renderInstructionsMarkdown } from "@shared/patch-instructions";
 import type {
   Edit,
