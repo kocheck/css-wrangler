@@ -150,7 +150,7 @@ export const useEditStore = create<EditState & EditActions>((set, get) => ({
     const edit = get().edits.find((e) => e.id === editId);
     if (!edit) return;
     const k = changeKey(state, breakpoint, property);
-    const isClear = !value;
+    const isClear = value.trim() === "";
     const groupId = edit.siblingGroup;
     const targetIds = new Set<string>([editId]);
     if (groupId) {

@@ -149,6 +149,10 @@ describe("unitsFor", () => {
     expect(unitsFor("height")).toContain("auto");
   });
 
+  it("allows bare numeric font weights", () => {
+    expect(unitsFor("font-weight")).toEqual([""]);
+  });
+
   it("falls back to the default list for unknown properties", () => {
     expect(unitsFor("padding")).toEqual(["px", "rem", "em", "%"]);
   });
