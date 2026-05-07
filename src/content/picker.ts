@@ -198,6 +198,8 @@ function cancel() {
 function cleanup() {
   active = false;
   currentTarget = null;
+  onPickCb = null;
+  onCancelCb = null;
   document.getElementById(OVERLAY_ID)?.remove();
   highlight(null);
   document.removeEventListener("keydown", onKey, true);
