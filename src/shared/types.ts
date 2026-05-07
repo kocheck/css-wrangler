@@ -29,7 +29,6 @@ export interface PropertyChange {
   from: string;
   to: string;
   tailwindHint?: string | null;
-  /** materialized `@media (max-width: Npx)` for non-desktop breakpoints; null for desktop */
   mediaQuery?: string | null;
 }
 

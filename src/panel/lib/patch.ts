@@ -1,4 +1,4 @@
-import { BREAKPOINTS, type BreakpointKey } from "@shared/constants";
+import { BREAKPOINTS, mediaQueryFor } from "@shared/constants";
 import { renderInstructionsMarkdown } from "@shared/patch-instructions";
 import type { Edit, Patch, PatchEdit, StylingSystem } from "@shared/types";
 import { tailwindHintFor } from "./tailwind-hint";
@@ -7,11 +7,6 @@ interface BuildArgs {
   url: string;
   stylingSystem: StylingSystem;
   edits: Edit[];
-}
-
-function mediaQueryFor(bp: BreakpointKey): string | null {
-  if (bp === "desktop") return null;
-  return `@media (max-width: ${BREAKPOINTS[bp]}px)`;
 }
 
 export function buildPatch({ url, stylingSystem, edits }: BuildArgs): Patch {
