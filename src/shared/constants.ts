@@ -12,6 +12,9 @@ export const BREAKPOINTS = {
 
 export type BreakpointKey = keyof typeof BREAKPOINTS;
 
+export function mediaQueryFor(bp: "desktop"): null;
+export function mediaQueryFor(bp: Exclude<BreakpointKey, "desktop">): string;
+export function mediaQueryFor(bp: BreakpointKey): string | null;
 export function mediaQueryFor(bp: BreakpointKey): string | null {
   if (bp === "desktop") return null;
   return `@media (max-width: ${BREAKPOINTS[bp]}px)`;
