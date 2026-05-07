@@ -7,79 +7,208 @@
  *   - push-figma-tokens.mjs  (DESIGN.md → Figma, generates the patch script)
  *   - check-figma-sync.mjs   (CI verify gate, reads the snapshot)
  *
- * Mapping rule (Figma variable name → DESIGN.md location):
- *   fg/X, bg/X, border/X    → colors.<folder>-X     +  colorsLight.<folder>-X
- *   accent/X                → colors.accent-X       (mode-agnostic, no light override)
- *   sp/N                    → spacing.N
- *   radius/X                → rounded.X
- *   type/X                  → type.X
- *   tracking/X              → tracking.X
- *   leading/X               → leading.X
+ * # Schema (post-Radix migration)
+ *
+ * Color tokens use a two-layer schema:
+ *
+ *   colorScales:                # Radix scales to import (from @radix-ui/colors)
+ *     - sand                    # neutrals
+ *     - tomato                  # signal / brand
+ *     - grass                   # applied
+ *     - amber                   # diverges
+ *
+ *   colorAliases:               # Semantic names → scale.step
+ *     fg-primary: sand.12
+ *     accent-signal: tomato.9
+ *     ...
+ *
+ * Non-color tokens (spacing, type, etc.) keep the legacy shape — they're
+ * not part of the Radix migration.
+ *
+ * Mapping rules (DESIGN.md → Figma variable name):
+ *   colorScales[scale] step N   → "<scale>/<N>"          (e.g. "sand/1", "tomato/12")
+ *   colorAliases[<folder>-<rest>] → "<folder>/<rest>"    (e.g. "fg/primary", "bg/elev-0")
+ *   spacing.N                   → "sp/N"
+ *   rounded.X                   → "radius/X"
+ *   type.X                      → "type/X"
+ *   tracking.X                  → "tracking/X"
+ *   leading.X                   → "leading/X"
  *
  * NOT synced (codebase-only): fonts.*, motion.*, ease.*
  */
 
+import * as RadixColors from "@radix-ui/colors";
+
 export const COLLECTION_NAME = "CSS Wrangler / Tokens";
 
+// ─────────────────────────────────────────────────────────────────────────
+// Radix scale access
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Number of steps in every Radix scale. */
+export const SCALE_STEPS = 12;
+
+/** Both modes a Radix scale ships. */
+export const SCALE_MODES = ["dark", "light"];
+
 /**
- * Map a Figma variable name (`fg/primary`, `sp/5`, …) → DESIGN.md location.
- * Returns `null` if the variable doesn't belong to a synced category.
+ * Returns the hex string for a (scale, step, mode). Throws if the scale
+ * isn't shipped by @radix-ui/colors. `step` is 1-indexed (1..12).
  */
-export function mapVariable(name) {
+export function radixHex(scale, step, mode) {
+  const exportName = mode === "dark" ? `${scale}Dark` : scale;
+  const obj = RadixColors[exportName];
+  if (!obj) {
+    throw new Error(
+      `Unknown Radix scale "${scale}" (mode "${mode}"). ` +
+        `Check @radix-ui/colors exports for "${exportName}".`,
+    );
+  }
+  const key = `${scale}${step}`;
+  const hex = obj[key];
+  if (!hex) {
+    throw new Error(`Radix scale "${scale}" (mode "${mode}") has no step ${step} (looked up "${key}").`);
+  }
+  return hex;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Iterators over DESIGN.md frontmatter
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Yield every (scale, step, mode, hex) the DESIGN.md frontmatter pulls in.
+ * Source of values is @radix-ui/colors; DESIGN.md only declares which
+ * scales to include.
+ */
+export function* iterateScaleSteps(fm) {
+  const scales = fm.colorScales || [];
+  for (const scale of scales) {
+    for (let step = 1; step <= SCALE_STEPS; step++) {
+      for (const mode of SCALE_MODES) {
+        yield {
+          scale,
+          step,
+          mode,
+          hex: radixHex(scale, step, mode),
+          figmaName: `${scale}/${step}`,
+          cssVar: `${scale}-${step}`,
+        };
+      }
+    }
+  }
+}
+
+/**
+ * Yield every (alias, scale, step) declared in colorAliases.
+ * Throws on malformed entries (non-string values, unknown scale, bad step).
+ */
+export function* iterateAliases(fm) {
+  const aliases = fm.colorAliases || {};
+  const declaredScales = new Set(fm.colorScales || []);
+  for (const [name, target] of Object.entries(aliases)) {
+    if (typeof target !== "string") {
+      throw new Error(`colorAliases.${name}: expected "scale.step" string, got ${JSON.stringify(target)}`);
+    }
+    const dot = target.indexOf(".");
+    if (dot === -1) {
+      throw new Error(`colorAliases.${name} = "${target}": expected "scale.step" (e.g. "sand.12")`);
+    }
+    const scale = target.slice(0, dot);
+    const stepStr = target.slice(dot + 1);
+    const step = Number(stepStr);
+    if (!Number.isInteger(step) || step < 1 || step > SCALE_STEPS) {
+      throw new Error(`colorAliases.${name} = "${target}": step must be 1..${SCALE_STEPS}, got "${stepStr}"`);
+    }
+    if (!declaredScales.has(scale)) {
+      throw new Error(
+        `colorAliases.${name} = "${target}": scale "${scale}" is not in colorScales. ` +
+          `Add it to colorScales or pick a different scale.`,
+      );
+    }
+    yield {
+      name,
+      scale,
+      step,
+      figmaName: aliasNameToFigmaPath(name),
+      cssVar: name,
+      target, // raw "scale.step" string (preserved for diagnostics)
+    };
+  }
+}
+
+/**
+ * Convert a flat alias key like `fg-primary`, `bg-elev-0`, `accent-signal`,
+ * `border-strong`, `border-focus` into the Figma variable folder path
+ * (`fg/primary`, `bg/elev-0`, `accent/signal`, `border/strong`,
+ * `border/focus`). Folder = substring before the first dash.
+ */
+export function aliasNameToFigmaPath(name) {
+  const dash = name.indexOf("-");
+  if (dash === -1) return name;
+  return `${name.slice(0, dash)}/${name.slice(dash + 1)}`;
+}
+
+/** Inverse: Figma path → flat alias key. */
+export function figmaPathToAliasName(path) {
+  return path.replace("/", "-");
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Non-color tokens (spacing, type, tracking, leading, rounded)
+// Legacy schema, kept verbatim from before the Radix migration.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Map a non-color Figma variable name (`sp/5`, `type/body`, …) to its
+ * DESIGN.md location. Returns `null` for unknown folders.
+ */
+export function mapNonColorVariable(name) {
   const slash = name.indexOf("/");
   if (slash === -1) return null;
   const folder = name.slice(0, slash);
   const leaf = name.slice(slash + 1);
   switch (folder) {
-    case "fg":
-    case "bg":
-    case "border":
-      return {
-        section: "colors",
-        lightSection: "colorsLight",
-        key: `${folder}-${leaf}`,
-        cssVar: `${folder}-${leaf}`,
-      };
-    case "accent":
-      return {
-        section: "colors",
-        lightSection: null,
-        key: `accent-${leaf}`,
-        cssVar: `accent-${leaf}`,
-      };
     case "sp":
-      return { section: "spacing", lightSection: null, key: leaf, cssVar: `sp-${leaf}` };
+      return { section: "spacing", key: leaf, cssVar: `sp-${leaf}` };
     case "radius":
-      return { section: "rounded", lightSection: null, key: leaf, cssVar: `radius-${leaf}` };
+      return { section: "rounded", key: leaf, cssVar: `radius-${leaf}` };
     case "type":
-      return { section: "type", lightSection: null, key: leaf, cssVar: `type-${leaf}` };
+      return { section: "type", key: leaf, cssVar: `type-${leaf}` };
     case "tracking":
-      return { section: "tracking", lightSection: null, key: leaf, cssVar: `tracking-${leaf}` };
+      return { section: "tracking", key: leaf, cssVar: `tracking-${leaf}` };
     case "leading":
-      return { section: "leading", lightSection: null, key: leaf, cssVar: `leading-${leaf}` };
+      return { section: "leading", key: leaf, cssVar: `leading-${leaf}` };
     default:
       return null;
   }
 }
 
-/** Inverse of `mapVariable`: DESIGN.md (section, key) → Figma variable name. */
-export function designKeyToFigmaName(section, key) {
-  if (section === "colors" || section === "colorsLight") {
-    // key is `<folder>-X` for fg/bg/border/accent
-    const dash = key.indexOf("-");
-    if (dash === -1) return null;
-    const folder = key.slice(0, dash);
-    const leaf = key.slice(dash + 1);
-    if (!["fg", "bg", "border", "accent"].includes(folder)) return null;
-    return `${folder}/${leaf}`;
-  }
+/** Inverse: (section, key) → Figma name for non-color tokens. */
+export function nonColorDesignKeyToFigmaName(section, key) {
   if (section === "spacing") return `sp/${key}`;
   if (section === "rounded") return `radius/${key}`;
   if (section === "type") return `type/${key}`;
   if (section === "tracking") return `tracking/${key}`;
   if (section === "leading") return `leading/${key}`;
-  return null; // fonts, motion, ease — not synced
+  return null;
 }
+
+/** Yield every non-color (section, key, value) triple under codegen. */
+export function* iterateNonColorTokens(frontmatter) {
+  const SYNCED = ["spacing", "rounded", "type", "tracking", "leading"];
+  for (const section of SYNCED) {
+    const obj = frontmatter[section];
+    if (!obj) continue;
+    for (const [key, value] of Object.entries(obj)) {
+      yield { section, key, value };
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Color helpers — RGB ↔ hex
+// ─────────────────────────────────────────────────────────────────────────
 
 /** Figma `{r, g, b}` (0–1 floats) → `#rrggbb`. Alpha is ignored. */
 export function rgbToHex({ r, g, b }) {
@@ -124,19 +253,12 @@ export function formatFloat(section, raw) {
 }
 
 /**
- * Parse DESIGN.md frontmatter values back to the Figma representation. Used
- * by the push script (DESIGN.md → Figma) and the verify gate.
- *
- * Returns { type: "COLOR" | "FLOAT", value, section, key } or null if the
- * value can't be parsed for the given section.
+ * Parse DESIGN.md frontmatter values for non-color tokens back to the
+ * Figma representation. Returns { type: "FLOAT", value } or null.
  */
-export function parseDesignValue(section, key, raw) {
+export function parseNonColorDesignValue(section, raw) {
   if (typeof raw !== "string") raw = String(raw);
   const trimmed = raw.replace(/^"|"$/g, "").trim();
-  if (section === "colors" || section === "colorsLight") {
-    if (!/^#[0-9a-fA-F]{6}$/.test(trimmed)) return null;
-    return { type: "COLOR", value: hexToRgb(trimmed) };
-  }
   if (section === "spacing") {
     const n = trimmed === "0" ? 0 : parseFloat(trimmed.replace("px", ""));
     if (Number.isNaN(n)) return null;
@@ -161,23 +283,8 @@ export function parseDesignValue(section, key, raw) {
   return null;
 }
 
-/**
- * Walk a parsed frontmatter object and yield every (section, key, value)
- * triple that maps to a Figma variable. Skips fonts/motion/ease.
- */
-export function* iterateDesignTokens(frontmatter) {
-  const SYNCED_SECTIONS = ["colors", "colorsLight", "spacing", "rounded", "type", "tracking", "leading"];
-  for (const section of SYNCED_SECTIONS) {
-    const obj = frontmatter[section];
-    if (!obj) continue;
-    for (const [key, value] of Object.entries(obj)) {
-      yield { section, key, value };
-    }
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────
-// DESIGN.md frontmatter parser — line-level, comment-preserving
+// DESIGN.md frontmatter envelope parser
 // ─────────────────────────────────────────────────────────────────────────
 
 // Top-level section header: `colors:` (optional whitespace, optional comment).
@@ -186,8 +293,6 @@ export function* iterateDesignTokens(frontmatter) {
 export const SECTION_HEADER_RE = /^([a-zA-Z][a-zA-Z0-9_-]*):\s*(?:\s+#.*)?$/;
 
 // Indented `<key>: <value>` line. Key may be quoted ("0") or bare.
-// Value is captured greedily through end of line — YAML comments on token
-// lines are exceedingly rare in this file and not worth the parsing risk.
 export const KEY_LINE_RE = /^(\s+)("?)([^":]+)\2:\s*(.+)$/;
 
 /**

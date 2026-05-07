@@ -2,24 +2,24 @@
 /**
  * check-figma-sync.mjs
  *
- * CI verify gate. Compares DESIGN.md → expected token values against the
+ * CI verify gate. Compares DESIGN.md → expected Figma state against the
  * committed `.figma/figma-state.json` snapshot. Fails on:
  *
- *   - Missing variables: DESIGN.md declares a token that's not in Figma.
- *   - Value drift: DESIGN.md value differs from snapshot value (Dark or
- *     Light mode for color tokens that have a colorsLight pair).
- *   - Stale codeSyntax / description / scopes: Figma metadata doesn't match
- *     what `pnpm tokens:push` would generate.
+ *   - Missing variables: a token DESIGN.md declares is absent from Figma.
+ *   - Scale-step value drift: a Radix scale step's hex differs (Dark or
+ *     Light) between @radix-ui/colors and Figma.
+ *   - Alias mis-routing: an alias variable doesn't point at the expected
+ *     scale-step variable, or isn't an alias at all.
+ *   - Non-color value drift: spacing/type/etc. value differs.
+ *   - Stale codeSyntax.
  *
  * Warns (does NOT fail) on:
  *
- *   - Orphan variables in Figma that aren't declared in DESIGN.md. These
- *     could be intentional (some accent introduced in Figma first), but
- *     they're not under codegen until DESIGN.md catches up.
+ *   - Orphan variables in Figma that aren't declared in DESIGN.md.
  *
- * Recovery: failure messages tell the author exactly what to do —
- * regenerate `.figma/push-patch.js`, paste in Figma, refresh the snapshot,
- * commit. The doc at .claude/figma-sync.md walks through the full loop.
+ * Recovery: failure messages tell the author what to do — regenerate
+ * `.figma/push-patch.js`, run via Figma, refresh the snapshot, commit.
+ * The doc at .claude/figma-sync.md walks through the full loop.
  *
  * Flags:
  *   --state <path>   Snapshot location. Defaults to .figma/figma-state.json.
@@ -32,10 +32,13 @@ import { fileURLToPath } from "node:url";
 import { load as loadYaml } from "js-yaml";
 import {
   COLLECTION_NAME,
-  designKeyToFigmaName,
-  parseDesignValue,
+  hexToRgb,
+  iterateAliases,
+  iterateNonColorTokens,
+  iterateScaleSteps,
+  nonColorDesignKeyToFigmaName,
   parseFrontmatterEnvelope,
-  iterateDesignTokens,
+  parseNonColorDesignValue,
   rgbToHex,
 } from "./lib/figma-token-map.mjs";
 
@@ -74,17 +77,22 @@ if (!darkModeId) {
 }
 
 const snapshotByName = new Map();
+const snapshotById = new Map();
 for (const v of Object.values(state.meta.variables)) {
-  if (v.variableCollectionId === collection.id) snapshotByName.set(v.name, v);
+  if (v.variableCollectionId === collection.id) {
+    snapshotByName.set(v.name, v);
+    snapshotById.set(v.id, v);
+  }
 }
 
-// ─── Check every DESIGN.md token ─────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────
 
 const failures = [];
 const seenFigmaNames = new Set();
 
 function colorEqual(a, b) {
   if (!a || !b) return false;
+  if (a.type === "VARIABLE_ALIAS" || b.type === "VARIABLE_ALIAS") return false;
   const eq = (x, y) => Math.round(x * 255) === Math.round(y * 255);
   return eq(a.r, b.r) && eq(a.g, b.g) && eq(a.b, b.b);
 }
@@ -93,72 +101,119 @@ function floatEqual(a, b) {
   return Math.abs(a - b) < 0.001;
 }
 function fmtColor(rgb) {
-  return rgb ? rgbToHex(rgb) : "(missing)";
+  if (!rgb) return "(missing)";
+  if (rgb.type === "VARIABLE_ALIAS") {
+    const target = snapshotById.get(rgb.id);
+    return `alias→${target?.name ?? "(unknown id)"}`;
+  }
+  return rgbToHex(rgb);
 }
 
-for (const { section, key, value } of iterateDesignTokens(fm)) {
-  const figmaName = designKeyToFigmaName(section, key);
+function checkCodeSyntax(figmaName, expected, existing) {
+  if (existing.codeSyntax?.WEB !== expected) {
+    failures.push(
+      `${figmaName}: codeSyntax.WEB = "${existing.codeSyntax?.WEB ?? "(unset)"}", expected "${expected}".`,
+    );
+  }
+}
+
+// ─── 1. Scale steps (raw RGB per mode, value sourced from @radix-ui/colors) ───
+
+for (const entry of iterateScaleSteps(fm)) {
+  seenFigmaNames.add(entry.figmaName);
+  const existing = snapshotByName.get(entry.figmaName);
+  if (!existing) {
+    failures.push(
+      `colorScales[${entry.scale}].${entry.step} (Figma "${entry.figmaName}"): MISSING from snapshot. ` +
+        `Run pnpm tokens:push, run the patch via Figma, refresh the snapshot.`,
+    );
+    continue;
+  }
+  const targetModeId = entry.mode === "dark" ? darkModeId : lightModeId;
+  if (!targetModeId) continue; // light mode optional in snapshot edge cases
+  const expected = hexToRgb(entry.hex);
+  const actual = existing.valuesByMode[targetModeId];
+  if (!colorEqual(expected, actual)) {
+    failures.push(
+      `${entry.figmaName} (${entry.mode}): expected ${entry.hex}, snapshot = ${fmtColor(actual)}.`,
+    );
+  }
+  // Code syntax is the same between modes, only check once on dark pass.
+  if (entry.mode === "dark") {
+    checkCodeSyntax(entry.figmaName, `var(--${entry.cssVar})`, existing);
+  }
+}
+
+// ─── 2. Aliases (VARIABLE_ALIAS pointing at the right scale step) ───
+
+for (const a of iterateAliases(fm)) {
+  seenFigmaNames.add(a.figmaName);
+  const existing = snapshotByName.get(a.figmaName);
+  if (!existing) {
+    failures.push(
+      `colorAliases.${a.name} (Figma "${a.figmaName}"): MISSING from snapshot. ` +
+        `Run pnpm tokens:push, run the patch via Figma, refresh the snapshot.`,
+    );
+    continue;
+  }
+  const expectedTargetName = `${a.scale}/${a.step}`;
+  for (const [modeName, modeId] of [["Dark", darkModeId], ["Light", lightModeId]]) {
+    if (!modeId) continue;
+    const value = existing.valuesByMode[modeId];
+    if (!value || value.type !== "VARIABLE_ALIAS") {
+      failures.push(
+        `${a.figmaName} (${modeName}): expected alias to ${expectedTargetName}, got ${fmtColor(value)}.`,
+      );
+      continue;
+    }
+    const target = snapshotById.get(value.id);
+    if (!target) {
+      failures.push(`${a.figmaName} (${modeName}): alias points at unknown variable id "${value.id}".`);
+      continue;
+    }
+    if (target.name !== expectedTargetName) {
+      failures.push(
+        `${a.figmaName} (${modeName}): alias points at "${target.name}", expected "${expectedTargetName}".`,
+      );
+    }
+  }
+  checkCodeSyntax(a.figmaName, `var(--${a.cssVar})`, existing);
+}
+
+// ─── 3. Non-color tokens (FLOAT, mode-stable) ───
+
+for (const { section, key, value } of iterateNonColorTokens(fm)) {
+  const figmaName = nonColorDesignKeyToFigmaName(section, key);
   if (!figmaName) continue;
   seenFigmaNames.add(figmaName);
-
-  const parsed = parseDesignValue(section, key, value);
+  const existing = snapshotByName.get(figmaName);
+  if (!existing) {
+    failures.push(
+      `${section}.${key} (Figma "${figmaName}"): MISSING from snapshot. ` +
+        `Run pnpm tokens:push, run the patch via Figma, refresh the snapshot.`,
+    );
+    continue;
+  }
+  const parsed = parseNonColorDesignValue(section, value);
   if (!parsed) {
     failures.push(`${section}.${key}: DESIGN.md value "${value}" couldn't be parsed for section "${section}".`);
     continue;
   }
-
-  const existing = snapshotByName.get(figmaName);
-  if (!existing) {
+  const darkExisting = existing.valuesByMode[darkModeId];
+  if (!floatEqual(parsed.value, darkExisting)) {
     failures.push(
-      `${section}.${key} (Figma "${figmaName}"): MISSING from Figma snapshot. ` +
-        `Run \`pnpm tokens:push\`, paste .figma/push-patch.js into Figma, then refresh the snapshot.`
-    );
-    continue;
-  }
-
-  // Value comparison
-  const isLightOnly = section === "colorsLight";
-  const targetModeId = isLightOnly ? lightModeId : darkModeId;
-  const existingValue = existing.valuesByMode[targetModeId];
-  const eq = parsed.type === "COLOR" ? colorEqual : floatEqual;
-  if (!eq(parsed.value, existingValue)) {
-    const expected = parsed.type === "COLOR" ? rgbToHex(parsed.value) : String(parsed.value);
-    const actual = parsed.type === "COLOR" ? fmtColor(existingValue) : String(existingValue);
-    failures.push(
-      `${section}.${key} (Figma "${figmaName}", mode ${isLightOnly ? "Light" : "Dark"}): ` +
-        `DESIGN.md = ${expected}, Figma = ${actual}.`
+      `${section}.${key} (Figma "${figmaName}", mode Dark): DESIGN.md = ${parsed.value}, Figma = ${darkExisting}.`,
     );
   }
-
-  // For accents and non-color tokens, Light should mirror Dark.
-  // For fg/bg/border, the Light value comes from colorsLight section (handled separately).
-  if (
-    section === "colors" &&
-    !figmaName.startsWith("fg/") &&
-    !figmaName.startsWith("bg/") &&
-    !figmaName.startsWith("border/") &&
-    lightModeId
-  ) {
+  if (lightModeId) {
     const lightExisting = existing.valuesByMode[lightModeId];
-    if (!eq(parsed.value, lightExisting)) {
-      const expected = rgbToHex(parsed.value);
-      const actual = fmtColor(lightExisting);
+    if (!floatEqual(parsed.value, lightExisting)) {
       failures.push(
-        `${section}.${key} (Figma "${figmaName}", mode Light): expected accent to mirror dark. DESIGN.md = ${expected}, Figma = ${actual}.`
+        `${section}.${key} (Figma "${figmaName}", mode Light): DESIGN.md = ${parsed.value}, Figma = ${lightExisting} (non-color tokens are mode-stable).`,
       );
     }
   }
-
-  // Metadata drift — codeSyntax + description.
-  // (Scopes are checked loosely — exact match on the full expected list.)
-  if (!isLightOnly) {
-    const expectedCss = `var(--${figmaName.replace("/", "-")})`;
-    if (existing.codeSyntax?.WEB !== expectedCss) {
-      failures.push(
-        `${figmaName}: codeSyntax.WEB = "${existing.codeSyntax?.WEB ?? "(unset)"}", expected "${expectedCss}".`
-      );
-    }
-  }
+  checkCodeSyntax(figmaName, `var(--${figmaName.replace("/", "-")})`, existing);
 }
 
 // ─── Orphans (in Figma but not DESIGN.md) — warn-only ────────────────────
@@ -181,7 +236,7 @@ if (failures.length > 0) {
   console.error("");
   console.error("To fix:");
   console.error("  1. pnpm tokens:push                   # writes .figma/push-patch.js");
-  console.error("  2. Paste .figma/push-patch.js into Figma (Plugin-API runner) and run.");
+  console.error("  2. Run .figma/push-patch.js in Figma via use_figma.");
   console.error("  3. Run the EXPORT_SNIPPET in Figma → save to .figma/figma-state.json.");
   console.error("  4. Commit DESIGN.md, tokens.css, .figma/push-patch.js, .figma/figma-state.json.");
   console.error("  See .claude/figma-sync.md for the full workflow.");
