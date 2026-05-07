@@ -34,6 +34,11 @@ Bumping that version is a breaking change for downstream consumers.
 Backwards-compatible field additions don't bump the version; they're added
 silently and consumers should ignore unknown fields.
 
+Each edit's `changes` array remains the complete list of requested source
+changes. Edits may also include an optional `media` array that groups
+non-desktop changes by `@media` query. That field is additive in v1.0:
+consumers that ignore it still see every change in `changes`.
+
 Example:
 
 ```json
@@ -52,11 +57,37 @@ Example:
         {
           "state": "default",
           "breakpoint": "desktop",
-          "property": "padding",
-          "from": "12px 24px",
-          "to": "16px 32px",
-          "tailwindHint": "py-4 px-8",
+          "property": "padding-top",
+          "from": "12px",
+          "to": "16px",
+          "tailwindHint": "pt-4",
           "mediaQuery": null
+        },
+        {
+          "state": "default",
+          "breakpoint": "tablet",
+          "property": "padding-top",
+          "from": "12px",
+          "to": "10px",
+          "tailwindHint": "pt-2.5",
+          "mediaQuery": "@media (max-width: 768px)"
+        }
+      ],
+      "media": [
+        {
+          "breakpoint": "tablet",
+          "query": "@media (max-width: 768px)",
+          "changes": [
+            {
+              "state": "default",
+              "breakpoint": "tablet",
+              "property": "padding-top",
+              "from": "12px",
+              "to": "10px",
+              "tailwindHint": "pt-2.5",
+              "mediaQuery": "@media (max-width: 768px)"
+            }
+          ]
         }
       ]
     }

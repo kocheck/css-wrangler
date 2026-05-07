@@ -60,25 +60,76 @@ content script or service worker, reload the extension manually in
 
 The clipboard output is the contract. Versioned at `"version": "1.0"`. Downstream
 consumers (Claude Code, future CLI) pattern-match on it, so its shape is stable.
+Additive fields do not bump the version; consumers should ignore fields they do
+not understand.
 
 A patch looks like:
 
 ```json
 {
   "version": "1.0",
+  "source": "css-wrangler",
+  "url": "https://example.com/page",
+  "capturedAt": "2026-05-06T18:00:00.000Z",
+  "stylingSystem": "tailwind",
+  "breakpoints": { "mobile": 375, "tablet": 768, "desktop": 1280 },
   "edits": [
     {
-      "selector": ".hero-cta",
-      "stylingSystem": "tailwind",
-      "property": "padding",
-      "from": "12px 24px",
-      "to": "16px 32px",
-      "tailwindHint": "py-4 px-8",
-      "siblingGroup": null
+      "siblingGroup": null,
+      "element": {
+        "tag": "button",
+        "text": "Get started",
+        "role": "button",
+        "ariaLabel": null,
+        "selectors": [{ "type": "class", "value": ".hero-cta", "stability": "high" }],
+        "domPath": "main > section.hero > button.hero-cta"
+      },
+      "changes": [
+        {
+          "state": "default",
+          "breakpoint": "desktop",
+          "property": "padding-top",
+          "from": "12px",
+          "to": "16px",
+          "tailwindHint": "pt-4",
+          "mediaQuery": null
+        },
+        {
+          "state": "default",
+          "breakpoint": "tablet",
+          "property": "padding-top",
+          "from": "12px",
+          "to": "10px",
+          "tailwindHint": "pt-2.5",
+          "mediaQuery": "@media (max-width: 768px)"
+        }
+      ],
+      "media": [
+        {
+          "breakpoint": "tablet",
+          "query": "@media (max-width: 768px)",
+          "changes": [
+            {
+              "state": "default",
+              "breakpoint": "tablet",
+              "property": "padding-top",
+              "from": "12px",
+              "to": "10px",
+              "tailwindHint": "pt-2.5",
+              "mediaQuery": "@media (max-width: 768px)"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
 ```
+
+`changes` remains the complete edit list for v1.0 compatibility. `media` is an
+optional, additive grouping of non-desktop changes into `@media` blocks so
+downstream consumers can apply breakpoint-scoped edits without changing the
+meaning of any existing field.
 
 Claude Code reads this and lands the change in the right file on the first try.
 That's the whole point.
@@ -130,7 +181,7 @@ contract is documented in [`cli/CONTRACT.md`](./cli/CONTRACT.md).
 
 **Tier 3 — after that**
 - Responsive breakpoints with viewport simulation
-- Patch output emits `@media` rules grouped by breakpoint
+- Patch output emits optional `media` blocks for breakpoint-scoped changes
 
 **Future**
 - Auto-push on edit-list change so Claude Code stays in sync without a

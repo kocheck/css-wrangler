@@ -66,4 +66,11 @@ export interface PatchEdit {
     domPath: string;
   };
   changes: PropertyChange[];
+  media?: PatchMediaBlock[];
+}
+
+export interface PatchMediaBlock {
+  breakpoint: Exclude<BreakpointKey, "desktop">;
+  query: string;
+  changes: PropertyChange[];
 }
